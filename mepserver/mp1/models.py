@@ -1,10 +1,12 @@
 from typing import List
 from utils import *
-from enum import Enum
+from enums import *
 
 class LinkType:
     """
     This type represents a type of link and may be referenced from data structures.
+
+    Raises TypeError
 
     Section 6.3.2 - MEC 011
     """
@@ -89,10 +91,6 @@ class CategoryRef:
         self.name = name
         self.version = version
 
-class ServiceState(Enum):
-    ACTIVE = "ACTIVE"
-    INACTIVE = "INACTIVE"
-
 class FilteringCriteria:
     def __init__(self, states: List[ServiceState], isLocal: bool, serInstancesId: List[str] = None, serNames: List[str] = None, serCategories: List[CategoryRef] = None):
         """
@@ -139,3 +137,145 @@ class SerAvailabilityNotificationSubscription:
         self._links = _links
         self.filteringCriteria = filteringCriteria
         self.subscriptionType = subscriptionType
+
+class OAuth2Info:
+    def __init__(self, grantTypes: GrantTypes, tokenEndpoint: List[str]):
+        """
+        This type represents security information related to a transport.
+
+        :param grantTypes: List of supported OAuth 2.0 grant types
+        :type grantTypes: GrantTypes
+        :param tokenEndpoint: The Token Endpoint
+        :type tokenEndpoint: List[String]
+
+        :Note: grantTypes can be between 1 and 4
+
+        Section 8.1.5.4
+        """
+        self.grantTypes = grantTypes
+        self.tokenEndpoint = tokenEndpoint
+
+class SecurityInfo:
+    def __init__(self, oAuth2Info: OAuth2Info):
+        """
+        :param oAuth2Info: Parameters related to use of OAuth 2.0.
+
+        Section 8.1.5.4
+        """
+        self.oAuth2Info = oAuth2Info
+
+class EndPointInfo:
+    """
+    Section 8.1.5.3
+    """
+    class Uris:
+        def __init__(self, uri: str):
+            """
+            :param uri: Entry point information of the service as string, formatted according to URI syntax
+            :type uri: String
+
+            Raises TypeError
+            """
+            self.uris = validate_uri(uri)
+
+    class Address:
+        def __init__(self, host: str, port: int):
+            """
+            :param host: Host portion of the address.
+            :type host: str
+            :param port: Port portion of the address.
+            :type port: int
+            """
+            self.host = host
+            self.port = port
+
+    class Addresses:
+        def __init__(self, addresses: List):
+            """
+            :param addresses: List of EndPointInfo.Addresses
+            :type addresses: List[EndpointInfo.Addresses]
+            """
+            self.addresses = addresses
+
+    class Alternative:
+        # This EndPointInfo isn't specified in MEC 011
+        pass
+
+class TransportInfo:
+    def __init__(self, id: str, name: str, type: TransportType, version: str, endpoint: EndPointInfo, security: SecurityInfo, impltSpecificInfo: str, description: str, protocol: str = "HTTP"):
+        """
+        :param id: The identifier of this transport.
+        :type id: String
+        :param name: The name of this transport.
+        :type name: String
+        :param type: Type of the transport.
+        :type type: TransportType
+        :param version: The version of the protocol used.
+        :type version: String
+        :param endpoint: Information about the endpoint to access the transport.
+        :type endpoint: EndPointInfo
+        :param security: Information about the security used by the transport.
+        :type security: SecurityInfo
+        :param impltSpecificInfo: Additional implementation specific details of the transport.
+        :type impltSpecificInfo: NotSpecified
+        :param protocol: The name of the protocol used. Shall be set to "HTTP" for a REST API.
+        :type protocol: String
+        :param description: Human-readable description of this transport.
+        :type description: String
+
+        Section 8.1.2.3
+        """
+        self.id = id
+        self.name = name
+        self.type = type
+        self.protocol = protocol
+        self.version = version
+        self.endpoint = endpoint
+        self.security = security
+        self.description = description
+        self.impltSpecificInfo = impltSpecificInfo
+
+class ServiceInfo:
+    def __init__(self, serInstanceId: str, serName: str, serCategory: str, version: str,
+                 state: ServiceState, transportInfo: TransportInfo, serializer: SerializerType,
+                 scopeOfLocality: LocalityType, isLocal: bool, consumedLocalOnly: bool,
+                 _links: Links, livenessInterval: int):
+        """
+        :param serInstanceId: Identifiers of service instances about which to report events
+        :type serInstanceId: String
+        :param serName: Names of services about which to report events.
+        :type serName: String
+        :param serCategory: Categories of services about which to report events.
+        :type serCategory: String
+        :param version: The version of the service.
+        :type version: String
+        :param state: Contains the service state.
+        :type state: String
+        :param transportInfo: Identifier of the platform-provided transport to be used by the service.
+        :type transportInfo: String
+        :param serializer: Indicate the supported serialization format of the service.
+        :type serializer: String
+        :param scopeOfLocality: The scope of locality as expressed by "consumedLocalOnly" and "isLocal".
+        :type scopeOfLocality: LocalityType
+        :param consumedLocalOnly: Indicate whether the service can only be consumed by the MEC applications located in the same locality
+        :type consumedLocalOnly: Boolean
+        :param isLocal: Indicate whether the service is located in the same locality as the consuming MEC application or not
+        :type isLocal: Boolean
+        :param _links: Links to resources related to this resource
+        :type _links: Links
+        :param livenessInterval: Interval (in seconds) between two consecutive "heartbeat" messages
+        :type livenessInterval: Integer
+        Note serCategories, serInstanceId and serNames are mutually-exclusive
+        """
+        self.serInstanceId = serInstanceId
+        self.serName = serName
+        self.serCategory = serCategory
+        self.version = version
+        self.state = state
+        self.transportInfo = transportInfo
+        self.serializer = serializer
+        self.scopeOfLocality = scopeOfLocality
+        self.consumedLocalOnly = consumedLocalOnly
+        self.isLocal = isLocal
+        self._links = _links
+        self.livenessInterval = livenessInterval
