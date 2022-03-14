@@ -2,6 +2,10 @@ from typing import List
 from utils import *
 from enums import *
 
+####################################
+# Classes used by both support and #
+# management api                   #
+####################################
 class LinkType:
     """
     This type represents a type of link and may be referenced from data structures.
@@ -13,6 +17,24 @@ class LinkType:
     def __init__(self,href):
         self.href = validate_uri(href)
 
+class ProblemDetails:
+    def __init__(self, type: str, title: str, status: int, detail: str, instance: str):
+        """
+        :param type: A URI reference according to IETF RFC 3986 that identifies the problem type
+        :param title: A short, human-readable summary of the problem type
+        :param status: The HTTP status code for this occurrence of the problem
+        :param detail: A human-readable explanation specific to this occurrence of the problem
+        :param instance: A URI reference that identifies the specific occurrence of the problem
+        """
+        self.type = type
+        self.title = title
+        self.status = status
+        self.detail = detail
+        self.instance = instance
+
+####################################
+# Classes used by management api   #
+####################################
 class Subscription:
     """
     The MEC application instance's subscriptions.
@@ -51,21 +73,6 @@ class MecServiceMgmtApiSubscriptionLinkList:
     """
     def __init__(self,_links: Links):
         self._links = _links
-
-class ProblemDetails:
-    def __init__(self, type: str, title: str, status: int, detail: str, instance: str):
-        """
-        :param type: A URI reference according to IETF RFC 3986 that identifies the problem type
-        :param title: A short, human-readable summary of the problem type
-        :param status: The HTTP status code for this occurrence of the problem
-        :param detail: A human-readable explanation specific to this occurrence of the problem
-        :param instance: A URI reference that identifies the specific occurrence of the problem
-        """
-        self.type = type
-        self.title = title
-        self.status = status
-        self.detail = detail
-        self.instance = instance
 
 class CategoryRef:
 
@@ -279,3 +286,7 @@ class ServiceInfo:
         self.isLocal = isLocal
         self._links = _links
         self.livenessInterval = livenessInterval
+
+####################################
+# Classes used by support api      #
+####################################
