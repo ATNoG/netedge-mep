@@ -1,6 +1,11 @@
+from __future__ import annotations
 from typing import List
-from utils import *
-from enums import *
+
+import cherrypy
+
+from .utils import *
+from .enums import *
+import json
 
 ####################################
 # Classes used by both support and #
@@ -16,6 +21,9 @@ class LinkType:
     """
     def __init__(self,href):
         self.href = validate_uri(href)
+
+    def to_json(self):
+        return dict(href=self.href)
 
 class ProblemDetails:
     def __init__(self, type: str, title: str, status: int, detail: str, instance: str):
@@ -53,6 +61,9 @@ class Subscription:
         self.href = validate_uri(href)
         self.subscriptionType = subscriptionType
 
+    def to_json(self):
+        return dict(href=self.href,
+                    subscriptionType=self.subscriptionType)
 class Links:
     """
     Internal structure to be compliant with MEC 011
@@ -64,6 +75,17 @@ class Links:
         self.self = _self
         self.subscriptions = subscriptions
 
+    @staticmethod
+    def from_json(data: dict) -> Links:
+        _self = LinkType(data["_self"]["href"])
+
+        subscriptions = [Subscription(**subscription) for subscription in data["subscriptions"]]
+
+        return Links(_self=_self,
+                     subscriptions=subscriptions)
+
+    def to_json(self):
+        return dict(self=self.self,subscriptions=self.subscriptions)
 
 class MecServiceMgmtApiSubscriptionLinkList:
     """
@@ -99,27 +121,61 @@ class CategoryRef:
         self.version = version
 
 class FilteringCriteria:
-    def __init__(self, states: List[ServiceState], isLocal: bool, serInstancesId: List[str] = None, serNames: List[str] = None, serCategories: List[CategoryRef] = None):
+    def __init__(self, states: List[ServiceState], isLocal: bool, serInstanceId: List[str] = None, serNames: List[str] = None, serCategories: List[CategoryRef] = None):
         """
         :param states: States of the services about which to report events. If the event is a state change, this filter represents the state after the change
         :type states: List[ServiceState]
         :param isLocal: Restrict event reporting to whether the service is local to the MEC platform where the subscription is managed.
         :type isLocal: Boolean
-        :param serInstancesId: Identifiers of service instances about which to report events
-        :type serInstancesId: String
+        :param serInstanceId: Identifiers of service instances about which to report events
+        :type serInstanceId: String
         :param serNames: Names of services about which to report events
         :type serNames: String
         :param serCategories: Categories of services about which to report events.
         :type serCategories: List of CategoryRef
 
         Note serCategories, serInstanceId and serNames are mutually-exclusive
+        Raises KeyError when Invalid Enum is provided
+        Raises InvalidIdentifier if no identifier is specified
+
         Section 8.1.3.2
         """
         self.states = states
         self.isLocal = isLocal
-        self.serInstancesId = serInstancesId
+        self.serInstanceId = serInstanceId
         self.serNames = serNames
         self.serCategories = serCategories
+
+    @staticmethod
+    def from_json(data: dict) -> FilteringCriteria:
+        #TODO VALIDATE
+        states = [ServiceState[state] for state in data["states"]]
+        isLocal = data["isLocal"]
+        # If various identifiers are present pick the first one returned
+        identifier = pick_identifier(data)
+        # Since only one is acceptable start all as none and then set only the one we got from the previous function
+        identifier_data = {"serCategories":None,"serNames":None,"serInstanceId":None}
+        if identifier == "serCategories":
+            identifier_data["serCategories"] = [CategoryRef(**category) for category in data["serCategories"]]
+        elif identifier == "serNames":
+            identifier_data["serNames"] = data["serNames"]
+        elif identifier == "serInstanceId":
+            identifier_data["serInstanceId"] = data["serInstanceId"]
+
+        # The object is created from the two known variables and from the dictionary setting only one identifier data
+        return FilteringCriteria(states=states,
+                                 isLocal=isLocal,
+                                 **identifier_data)
+
+    def to_json(self):
+        # Only returns the identifier that isn't None
+        for tmp_identifier in ["serCategories","serNames","serInstanceId"]:
+            tmp_identifier_value = self.__getattribute__(tmp_identifier)
+            if tmp_identifier_value is not None:
+                # Recreates the dict for the json to be generated
+                return dict(states=self.states,
+                            isLocal=self.isLocal,
+                            **{tmp_identifier:tmp_identifier_value})
 
 class SerAvailabilityNotificationSubscription:
     def __init__(self, callbackReference: str, _links: Links,
@@ -144,6 +200,25 @@ class SerAvailabilityNotificationSubscription:
         self._links = _links
         self.filteringCriteria = filteringCriteria
         self.subscriptionType = subscriptionType
+
+    @staticmethod
+    def from_json(data: dict) -> SerAvailabilityNotificationSubscription:
+        # TODO VALIDATE
+        callbackReference = data["callbackReference"]
+        # Rename self to _self due to python keyword restriction
+        data["_links"]["_self"] = data["_links"].pop("self")
+        _links = Links.from_json(data["_links"])
+        filteringCriteria = FilteringCriteria.from_json(data["filteringCriteria"])
+        subscriptionType = data["subscriptionType"]
+        return SerAvailabilityNotificationSubscription(callbackReference=callbackReference,
+                                                       _links=_links,
+                                                       filteringCriteria=filteringCriteria,
+                                                       subscriptionType=subscriptionType)
+    def to_json(self):
+        return dict(callbackReference=self.callbackReference,
+                    _links=self._links,
+                    filteringCriteria=self.filteringCriteria,
+                    subscriptionType=self.subscriptionType)
 
 class OAuth2Info:
     def __init__(self, grantTypes: GrantTypes, tokenEndpoint: List[str]):

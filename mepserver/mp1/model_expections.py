@@ -1,0 +1,2 @@
+class InvalidIdentifier(Exception):
+    pass
