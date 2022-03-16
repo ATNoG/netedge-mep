@@ -2,7 +2,7 @@ import sys
 sys.path.append('../../')
 from mp1.models import *
 
-class SubscriptionsController:
+class ApplicationSubscriptionsController:
 
     @json_out(cls=NestedEncoder)
     def applications_subscriptions_get(self,appInstanceId: str):

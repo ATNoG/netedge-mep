@@ -5,7 +5,7 @@ import cherrypy
 sys.path.append('../../')
 from mp1.models import *
 
-class ServicesController:
+class ApplicationServicesController:
 
     @json_out(cls=NestedEncoder)
     def applications_services_get(self, appInstanceId: str, **kwargs):
@@ -42,6 +42,8 @@ class ServicesController:
         serviceInfo = ServiceInfo.from_json(data)
         return serviceInfo
 
+    @cherrypy.tools.json_in()
+    @json_out(cls=NestedEncoder)
     def applications_services_post(self,appInstanceId: str):
         """
         This method is used to create a mecService resource. This method is typically used in "service availability update and new service registration" procedure
@@ -52,9 +54,11 @@ class ServicesController:
         :return: ServiceInfo or ProblemDetails
         HTTP STATUS CODE: 201, 400, 403, 404
         """
+        data = cherrypy.request.json
+        serviceInfo = ServiceInfo.from_json(data)
+        return serviceInfo
 
-        return None
-
+    @json_out(cls=NestedEncoder)
     def applicaton_services_get_with_service_id(self,appInstanceId: str, serviceId: str):
         """
         This method retrieves information about a mecService resource. This method is typically used in "service availability query" procedure
@@ -67,8 +71,13 @@ class ServicesController:
         :return: ServiceInfo or ProblemDetails
         HTTP STATUS CODE: 200, 400, 403, 404
         """
-        return None
+        # TODO VALIDATE PARAMETERS (i.e mutually exclusive) AND CREATE QUERY
+        data = json.loads("{\"serInstanceId\":\"string\",\"serName\":\"string\",\"livenessInterval\":5,\"_links\":{\"self\":{\"href\":\"http://www.google.com\"},\"liveness\":{\"href\":\"http://www.google.com\"}},\"serCategory\":{\"href\":\"string\",\"id\":\"string\",\"name\":\"string\",\"version\":\"string\"},\"version\":\"string\",\"state\":\"ACTIVE\",\"transportInfo\":{\"id\":\"string\",\"endpoint\":{\"uris\":[\"http://www.google.com\"]},\"name\":\"string\",\"description\":\"string\",\"type\":\"REST_HTTP\",\"protocol\":\"string\",\"version\":\"string\",\"security\":{\"oAuth2Info\":{\"grantTypes\":[\"OAUTH2_AUTHORIZATION_CODE\"],\"tokenEndpoint\":\"string\"}},\"implSpecificInfo\":{}},\"serializer\":\"JSON\",\"scopeOfLocality\":\"MEC_SYSTEM\",\"consumedLocalOnly\":true,\"isLocal\":true}")
+        serviceInfo = ServiceInfo.from_json(data)
+        return serviceInfo
 
+    @cherrypy.tools.json_in()
+    @json_out(cls=NestedEncoder)
     def application_services_put(self,appInstanceId: str, serviceId: str):
         """
         This method updates the information about a mecService resource
@@ -84,7 +93,10 @@ class ServicesController:
         :return: ServiceInfo or ProblemDetails
         HTTP STATUS CODE: 200, 400, 403, 404, 412
         """
-        return None
+        # TODO PUT ONLY NEEDS TO RECEIVE ONE UPDATABLE CRITERIA
+        data = cherrypy.request.json
+        serviceInfo = ServiceInfo.from_json(data)
+        return serviceInfo
 
     def application_services_delete(self,appInstanceId: str, serviceId: str):
         """
@@ -99,3 +111,5 @@ class ServicesController:
         :return: No Content or ProblemDetails
         HTTP STATUS CODE: 204, 403, 404,
         """
+        cherrypy.response.status = 204
+        return

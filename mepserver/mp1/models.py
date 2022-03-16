@@ -78,45 +78,30 @@ class Links:
     Section 6.2.2
     """
 
-    def __init__(self, _self: LinkType, subscriptions: List[Subscription]):
+    def __init__(self, _self: LinkType, subscriptions: List[Subscription], liveness: LinkType = None):
         self.self = _self
         self.subscriptions = subscriptions
+        self.liveness = liveness
 
     @staticmethod
     def from_json(data: dict) -> Links:
         _self = LinkType(data["self"]["href"])
-        subscriptions = [Subscription(**subscription) for subscription in data["subscriptions"]]
-
-        return Links(_self=_self,
-                     subscriptions=subscriptions)
-
-    def to_json(self):
-        return dict(self=self.self,
-                    subscriptions=self.subscriptions)
-
-class Links_ServiceInfo:
-    """
-    Internal structure to be compliant with MEC 011
-
-    Section 8.1.2.2
-    """
-
-    def __init__(self, _self: LinkType, liveness: LinkType = None):
-        self.self = _self
-        self.liveness = liveness
-
-    @staticmethod
-    def from_json(data: dict) -> Links_ServiceInfo:
-        _self = LinkType(data["self"]["href"])
+        subscriptions = None
+        if "subscriptions" in data and len(data["subscriptions"])>0:
+            subscriptions = [Subscription(**subscription) for subscription in data["subscriptions"]]
         liveness = None
         if "liveness" in data:
             liveness = LinkType(data["liveness"]["href"])
-        return Links_ServiceInfo(_self=_self,
-                                 liveness=liveness)
+
+        return Links(_self=_self,
+                     subscriptions=subscriptions,
+                     liveness=liveness)
 
     def to_json(self):
         return ignore_none_value(dict(self=self.self,
+                    subscriptions=self.subscriptions,
                     liveness=self.liveness))
+
 
 class MecServiceMgmtApiSubscriptionLinkList:
     """
@@ -496,7 +481,7 @@ class ServiceInfo:
         if "scopeOfLocality" in data.keys():
             scopeOfLocality = LocalityType(data.pop("scopeOfLocality"))
 
-        _links = Links_ServiceInfo.from_json(data.pop("_links"))
+        _links = Links.from_json(data.pop("_links"))
         return ServiceInfo(state=state,
                            transportInfo=transportInfo,
                            serializer=serializer,
