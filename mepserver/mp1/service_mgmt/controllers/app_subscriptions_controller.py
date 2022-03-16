@@ -1,14 +1,11 @@
-import cherrypy
-import json
 import sys
 sys.path.append('../../')
 from mp1.models import *
-from mp1.model_expections import *
 
 class SubscriptionsController:
 
-    @cherrypy.tools.json_out()
-    def applications_subscriptions_get(self,appInstanceId: int):
+    @json_out(cls=NestedEncoder)
+    def applications_subscriptions_get(self,appInstanceId: str):
         """
         The GET method may be used to request information about all subscriptions for this requestor. Upon success, the response contains entity body with all the subscriptions for the requestor.
 
@@ -20,9 +17,9 @@ class SubscriptionsController:
         """
         if cherrypy.request.method == "GET":
             #TODO CREATE REALLY CONNECTION
-            data = {"_links":{"self":{"href":"data"},"subscriptions":{"href":"data","subscription":"data"}}}
-            service = MecServiceMgmtApiSubscriptionLinkList(**data)
-            return vars(service)
+            data = {"_links":{"self":{"href":"http://google.com"},"subscriptions":[{"href":"http://google.com","subscriptionType":"data"}]}}
+            service = MecServiceMgmtApiSubscriptionLinkList.from_json(data)
+            return service
         else:
             # TODO PROPERLY FIX INVALID REQUESTS
             cherrypy.response.status = 400
@@ -35,7 +32,8 @@ class SubscriptionsController:
             return vars(problem_detail)
 
     @cherrypy.tools.json_in()
-    def applications_subscriptions_post(self,appInstanceId: int):
+    @json_out(cls=NestedEncoder)
+    def applications_subscriptions_post(self,appInstanceId: str):
         """
         The GET method may be used to request information about all subscriptions for this requestor. Upon success, the response contains entity body with all the subscriptions for the requestor.
 
@@ -53,33 +51,27 @@ class SubscriptionsController:
             try:
                 availability_notification = SerAvailabilityNotificationSubscription.from_json(input_json)
 
-                return json.dumps(availability_notification,cls=NestedEncoder)
+                return availability_notification
             except TypeError as e:
-                cherrypy.log(traceback=True)
+                cherrypy.response.status = 400
                 problem_detail = ProblemDetails(type="",
                                                 title="Invalid href",
                                                 status=400,
                                                 detail="Resource URI didn't meet specifications",
                                                 instance="")
-                return vars(problem_detail)
-            except InvalidIdentifier as e:
+                return problem_detail
+            except KeyError as e:
+                cherrypy.response.status = 400
                 problem_detail = ProblemDetails(type="",
-                                                title="No identifier was sent",
+                                                title="Invalid Request Data",
                                                 status=400,
-                                                detail="Application Subscription POST Method requires at least one filteringCriteria Identifier (serNames,serCategories,serInstanceIds)",
+                                                detail="The request data contained one or more invalid parameters" ,
                                                 instance="")
-                return vars(problem_detail)
-        else:
-            # TODO PROPERLY FIX INVALID REQUESTS
-            cherrypy.response.status = 400
-            problem_detail = ProblemDetails(type="",
-                                            title="Invalid HTTP Request Method",
-                                            status=400,
-                                            detail="Endpoint only accepts GET requests",
-                                            instance="")
-            return vars(problem_detail)
+                return problem_detail
+        # TODO MISSING CALLBACK
 
-    def applications_subscriptions_get_with_subscription_id(self,appInstanceId: int, subscriptionId: int):
+    @json_out(cls=NestedEncoder)
+    def applications_subscriptions_get_with_subscription_id(self,appInstanceId: str, subscriptionId: str):
         """
         The GET method requests information about a subscription for this requestor. Upon success, the response contains entity body with the subscription for the requestor.
 
@@ -91,10 +83,11 @@ class SubscriptionsController:
         :return: SerAvailabilityNotificationSubscription or ProblemDetails
         HTTP STATUS CODE: 200, 400, 403, 404
         """
+        data = json.loads("{\"subscriptionType\":\"string\",\"callbackReference\":\"http://www.google1.com\",\"_links\":{\"self\":{\"href\":\"http://www.google.com\"},\"subscriptions\":[{\"href\":\"http://www.google.com\",\"subscriptionType\":\"Normal\"}]},\"filteringCriteria\":{\"serInstanceIds\":[\"string\"],\"serNames\":[\"string\"],\"serCategories\":[{\"href\":\"http://www.google.com\",\"id\":\"string\",\"name\":\"string\",\"version\":\"string\"}],\"states\":[\"ACTIVE\"],\"isLocal\":true}}")
+        availability_notification = SerAvailabilityNotificationSubscription.from_json(data)
+        return availability_notification
 
-        return None
-
-    def applications_subscriptions_delete(self,appInstanceId: int, subscriptionId: int):
+    def applications_subscriptions_delete(self,appInstanceId: str, subscriptionId: str):
         """
         This method deletes a mecSrvMgmtSubscription. This method is typically used in "Unsubscribing from service availability event notifications" procedure.
 
@@ -106,4 +99,6 @@ class SubscriptionsController:
         :return: No Content or ProblemDetails
         HTTP STATUS CODE: 204, 403, 404
         """
-        return None
+        # TODO LOGIC
+        cherrypy.response.status = 204
+        return

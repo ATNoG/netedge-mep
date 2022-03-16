@@ -1,2 +1,4 @@
-class InvalidIdentifier(Exception):
+def InvalidQuery(Exception):
+    pass
+def InvalidGrantType(Exception):
     pass
