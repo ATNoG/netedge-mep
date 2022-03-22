@@ -402,10 +402,10 @@ class TransportInfo:
 
     @staticmethod
     def from_json(data: dict)->TransportInfo:
-        type = TransportType(data.pop("type"))
+        _type = TransportType(data.pop("type"))
         endpoint = EndPointInfo.from_json(data.pop("endpoint"))
         security = SecurityInfo.from_json(data.pop("security"))
-        return TransportInfo(type=type,
+        return TransportInfo(type=_type,
                              endpoint=endpoint,
                              security=security,
                              **data)
@@ -468,7 +468,7 @@ class ServiceInfo:
         self.livenessInterval = livenessInterval
 
     @staticmethod
-    def from_json(data:dict)->ServiceInfo:
+    def from_json(data:dict) -> ServiceInfo:
         # Validate the json via jsonschema
         validate(instance=data,schema=serviceinfo_schema)
         # Similar to FilteringCriteria but here serInstanceId, serName and serCategory can't be lists
@@ -519,3 +519,25 @@ class ServiceInfo:
 ####################################
 # Classes used by support api      #
 ####################################
+
+# In theory this class doesn't need to exist but since ETSI defined a post request body
+# it may be useful in the future (i.e new indications etc...)
+class AppReadyConfirmation:
+    def __init__(self, indication: IndicationType):
+        self.indication = indication
+
+    @staticmethod
+    def from_json(data:dict) -> AppReadyConfirmation:
+        indication = IndicationType(data["indication"])
+        return AppReadyConfirmation(indication = indication)
+
+# In theory this class doesn't need to exist but since ETSI defined a post request body
+# it may be useful in the future (i.e new indications etc...)
+class AppTerminationConfirmation:
+    def __init__(self, operationAction: OperationActionType):
+        self.operationAction = operationAction
+
+    @staticmethod
+    def from_json(data:dict) -> AppTerminationConfirmation:
+        operationAction = OperationActionType(data["operationAction"])
+        return AppTerminationConfirmation(operationAction = operationAction)

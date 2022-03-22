@@ -87,6 +87,7 @@ class ApplicationSubscriptionsController:
         availability_notification = SerAvailabilityNotificationSubscription.from_json(data)
         return availability_notification
 
+    @json_out(cls=NestedEncoder)
     def applications_subscriptions_delete(self,appInstanceId: str, subscriptionId: str):
         """
         This method deletes a mecSrvMgmtSubscription. This method is typically used in "Unsubscribing from service availability event notifications" procedure.

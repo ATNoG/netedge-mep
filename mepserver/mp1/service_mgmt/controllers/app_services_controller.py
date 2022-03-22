@@ -98,6 +98,7 @@ class ApplicationServicesController:
         serviceInfo = ServiceInfo.from_json(data)
         return serviceInfo
 
+    @json_out(cls=NestedEncoder)
     def application_services_delete(self,appInstanceId: str, serviceId: str):
         """
         This method deletes a mecService resource. This method is typically used in the service deregistration procedure.
