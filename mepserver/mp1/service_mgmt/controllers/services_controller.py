@@ -31,12 +31,12 @@ class ServicesController:
         """
         # TODO VALIDATE PARAMETERS (i.e mutually exclusive) AND CREATE QUERY
         data = json.loads(
-            "{\"serInstanceId\":\"string\",\"serName\":\"string\",\"livenessInterval\":5,\"_links\":{\"self\":{\"href\":\"http://www.google.com\"},\"liveness\":{\"href\":\"http://www.google.com\"}},\"serCategory\":{\"href\":\"string\",\"id\":\"string\",\"name\":\"string\",\"version\":\"string\"},\"version\":\"string\",\"state\":\"ACTIVE\",\"transportInfo\":{\"id\":\"string\",\"endpoint\":{\"uris\":[\"http://www.google.com\"]},\"name\":\"string\",\"description\":\"string\",\"type\":\"REST_HTTP\",\"protocol\":\"string\",\"version\":\"string\",\"security\":{\"oAuth2Info\":{\"grantTypes\":[\"OAUTH2_AUTHORIZATION_CODE\"],\"tokenEndpoint\":\"string\"}},\"implSpecificInfo\":{}},\"serializer\":\"JSON\",\"scopeOfLocality\":\"MEC_SYSTEM\",\"consumedLocalOnly\":true,\"isLocal\":true}")
+            "{\"livenessInterval\":5,\"_links\":{\"self\":{\"href\":\"http://www.google.com\"},\"liveness\":{\"href\":\"http://www.google.com\"}},\"serCategory\":{\"href\":\"http://www.google.com\",\"id\":\"string\",\"name\":\"string\",\"version\":\"string\"},\"version\":\"string\",\"state\":\"ACTIVE\",\"transportInfo\":{\"id\":\"string\",\"endpoint\":{\"uris\":[\"http://www.google.com\"]},\"name\":\"string\",\"description\":\"string\",\"type\":\"REST_HTTP\",\"protocol\":\"string\",\"version\":\"string\",\"security\":{\"oAuth2Info\":{\"grantTypes\":[\"OAUTH2_AUTHORIZATION_CODE\"],\"tokenEndpoint\":\"string\"}},\"implSpecificInfo\":{}},\"serializer\":\"JSON\",\"scopeOfLocality\":\"MEC_SYSTEM\",\"consumedLocalOnly\":true,\"isLocal\":true}")
         serviceInfo = ServiceInfo.from_json(data)
         return serviceInfo
 
     @json_out(cls=NestedEncoder)
-    def services_get_with_serviceId(self,serviceId: str):
+    def services_get_with_serviceId(self, serviceId: str):
         """
         This method retrieves information about a mecService resource. This method is typically used in "service availability query" procedure
 
@@ -47,6 +47,6 @@ class ServicesController:
         """
         # TODO VALIDATE PARAMETERS (i.e mutually exclusive) AND CREATE QUERY
         data = json.loads(
-            "{\"serInstanceId\":\"string\",\"serName\":\"string\",\"livenessInterval\":5,\"_links\":{\"self\":{\"href\":\"http://www.google.com\"},\"liveness\":{\"href\":\"http://www.google.com\"}},\"serCategory\":{\"href\":\"string\",\"id\":\"string\",\"name\":\"string\",\"version\":\"string\"},\"version\":\"string\",\"state\":\"ACTIVE\",\"transportInfo\":{\"id\":\"string\",\"endpoint\":{\"uris\":[\"http://www.google.com\"]},\"name\":\"string\",\"description\":\"string\",\"type\":\"REST_HTTP\",\"protocol\":\"string\",\"version\":\"string\",\"security\":{\"oAuth2Info\":{\"grantTypes\":[\"OAUTH2_AUTHORIZATION_CODE\"],\"tokenEndpoint\":\"string\"}},\"implSpecificInfo\":{}},\"serializer\":\"JSON\",\"scopeOfLocality\":\"MEC_SYSTEM\",\"consumedLocalOnly\":true,\"isLocal\":true}")
+            "{\"serName\":\"working\",\"livenessInterval\":5,\"_links\":{\"self\":{\"href\":\"http://www.google.com\"},\"liveness\":{\"href\":\"http://www.google.com\"}},\"version\":\"string\",\"state\":\"ACTIVE\",\"transportInfo\":{\"id\":\"string\",\"endpoint\":{\"uris\":[\"http://www.google.com\"]},\"name\":\"string\",\"description\":\"string\",\"type\":\"REST_HTTP\",\"protocol\":\"string\",\"version\":\"string\",\"security\":{\"oAuth2Info\":{\"grantTypes\":[\"OAUTH2_AUTHORIZATION_CODE\"],\"tokenEndpoint\":\"string\"}},\"implSpecificInfo\":{}},\"serializer\":\"JSON\",\"scopeOfLocality\":\"MEC_SYSTEM\",\"consumedLocalOnly\":true,\"isLocal\":true}")
         serviceInfo = ServiceInfo.from_json(data)
         return serviceInfo

@@ -67,7 +67,7 @@ if __name__ == "__main__":
     dispatcher.connect(name="Delete service",
                        action="application_services_delete",
                        controller=ApplicationServicesController,
-                       route="/applications/:appInstanceId/serviecs/:serviceId",
+                       route="/applications/:appInstanceId/services/:serviceId",
                        conditions=dict(method=["DELETE"]))
 
     #######################
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     ########################
     # Transport Controller #
     ########################
-    dispatcher.connect(name="Get services with serviceId",
+    dispatcher.connect(name="Get transports",
                        action="transports_get",
                        controller=TransportsController,
                        route="/transports",

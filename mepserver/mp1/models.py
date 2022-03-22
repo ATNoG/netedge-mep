@@ -1,11 +1,12 @@
 from __future__ import annotations
 from typing import List
-
+from jsonschema import validate
 import cherrypy
 
 from .utils import *
 from .enums import *
-from .model_expections import *
+from .model_exceptions import *
+from .schemas import *
 
 ####################################
 # Classes used by both support and #
@@ -19,7 +20,7 @@ class LinkType:
 
     Section 6.3.2 - MEC 011
     """
-    def __init__(self,href):
+    def __init__(self,href: str):
         self.href = validate_uri(href)
 
     def to_json(self):
@@ -78,7 +79,7 @@ class Links:
     Section 6.2.2
     """
 
-    def __init__(self, _self: LinkType, subscriptions: List[Subscription], liveness: LinkType = None):
+    def __init__(self, _self: LinkType, subscriptions: List[Subscription] = None, liveness: LinkType = None):
         self.self = _self
         self.subscriptions = subscriptions
         self.liveness = liveness
@@ -114,6 +115,8 @@ class MecServiceMgmtApiSubscriptionLinkList:
 
     @staticmethod
     def from_json(data:dict)->MecServiceMgmtApiSubscriptionLinkList:
+        #First validate the json via jsonschema
+        validate(instance=data,schema=mecservicemgmtapisubscriptionlinklist_schema)
         _links = Links.from_json(data["_links"])
         return MecServiceMgmtApiSubscriptionLinkList(_links=_links)
 
@@ -144,6 +147,13 @@ class CategoryRef:
         self.name = name
         self.version = version
 
+    def to_json(self):
+        # All required none should have value none thus there is no need to use ignore_none_val
+        return dict(href=self.href,
+                    id=self.id,
+                    name=self.name,
+                    version=self.version)
+
 class FilteringCriteria:
     def __init__(self, states: List[ServiceState], isLocal: bool, serInstanceId: List[str] = None, serNames: List[str] = None, serCategories: List[CategoryRef] = None):
         """
@@ -172,8 +182,6 @@ class FilteringCriteria:
 
     @staticmethod
     def from_json(data: dict) -> FilteringCriteria:
-        # TODO VALIDATE
-        # TODO none of the fields are required ....
         states = [ServiceState[state] for state in data["states"]]
         isLocal = data["isLocal"]
 
@@ -228,7 +236,8 @@ class SerAvailabilityNotificationSubscription:
 
     @staticmethod
     def from_json(data: dict) -> SerAvailabilityNotificationSubscription:
-        # TODO VALIDATE
+        # validate the json via jsonschema
+        validate(instance=data,schema=seravailabilitynotificationsubscription_schema)
         _links = Links.from_json(data.pop("_links"))
         # FilteringCriteria is not a required request body parameter
         filteringCriteria = None
@@ -246,16 +255,17 @@ class SerAvailabilityNotificationSubscription:
         )
 
 class OAuth2Info:
-    def __init__(self, grantTypes: List[GrantTypes], tokenEndpoint: List[str]):
+    def __init__(self, grantTypes: List[GrantTypes], tokenEndpoint: str):
         """
         This type represents security information related to a transport.
 
         :param grantTypes: List of supported OAuth 2.0 grant types
         :type grantTypes: List[GrantTypes] Min size 1 Max Size 4
         :param tokenEndpoint: The Token Endpoint
-        :type tokenEndpoint: List[String]
+        :type tokenEndpoint: String
 
         :Note: grantTypes can be between 1 and 4
+        :Note: tokenEndpoint seems required in swagger but isn't in MEC011 Specification
 
         Section 8.1.5.4
         Raises InvalidGrantType
@@ -264,7 +274,7 @@ class OAuth2Info:
         self.tokenEndpoint = tokenEndpoint
 
     @staticmethod
-    def from_json(data:dict)-> OAuth2Info:
+    def from_json(data:dict) -> OAuth2Info:
         # list(set()) to ignore possible duplicates from the user
         data["grantTypes"] = list(set(data["grantTypes"]))
         if 1 > len(data["grantTypes"]) > 4:
@@ -412,7 +422,7 @@ class TransportInfo:
 
 class ServiceInfo:
     def __init__(self, version: str,
-                 state: ServiceState, transportInfo: TransportInfo, serializer: SerializerType, _links: Links_ServiceInfo,
+                 state: ServiceState, transportInfo: TransportInfo, serializer: SerializerType, _links: Links,
                  livenessInterval: int, consumedLocalOnly: bool = True, isLocal: bool = True,
                  scopeOfLocality: LocalityType = LocalityType.MEC_HOST ,serInstanceId: str = None, serName: str = None, serCategory: str = None):
         """
@@ -441,6 +451,8 @@ class ServiceInfo:
         :param livenessInterval: Interval (in seconds) between two consecutive "heartbeat" messages
         :type livenessInterval: Integer
         Note serCategories, serInstanceId and serNames are mutually-exclusive
+
+        Section 8.1.2.2
         """
         self.serInstanceId = serInstanceId
         self.serName = serName
@@ -457,6 +469,8 @@ class ServiceInfo:
 
     @staticmethod
     def from_json(data:dict)->ServiceInfo:
+        # Validate the json via jsonschema
+        validate(instance=data,schema=serviceinfo_schema)
         # Similar to FilteringCriteria but here serInstanceId, serName and serCategory can't be lists
         possible_identifiers = ["serInstanceId","serName","serCategory"]
         identifier = pick_identifier(data,possible_identifiers=possible_identifiers)
@@ -469,9 +483,9 @@ class ServiceInfo:
         elif identifier == "serInstanceId":
             identifier_data["serInstanceId"] = data["serInstanceId"]
         # Remove the keys of identifier data
-        data.pop("serCategory")
-        data.pop("serName")
-        data.pop("serInstanceId")
+        data.pop("serCategory",None)
+        data.pop("serName",None)
+        data.pop("serInstanceId",None)
         # Each required element or element that can't be automatically generated from the unpacking is popped
         # to avoid having the function received the element twice and throwing and exception
         state = ServiceState(data.pop("state"))
