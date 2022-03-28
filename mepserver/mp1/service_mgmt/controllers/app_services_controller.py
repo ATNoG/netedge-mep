@@ -2,11 +2,11 @@ import sys
 
 import cherrypy
 
-sys.path.append('../../')
+sys.path.append("../../")
 from mp1.models import *
 
-class ApplicationServicesController:
 
+class ApplicationServicesController:
     @json_out(cls=NestedEncoder)
     def applications_services_get(self, appInstanceId: str, **kwargs):
         """
@@ -38,13 +38,15 @@ class ApplicationServicesController:
         """
 
         # TODO VALIDATE PARAMETERS (i.e mutually exclusive) AND CREATE QUERY
-        data = json.loads("{\"livenessInterval\":5,\"_links\":{\"self\":{\"href\":\"http://www.google.com\"},\"liveness\":{\"href\":\"http://www.google.com\"}},\"serCategory\":{\"href\":\"http://www.google.com\",\"id\":\"string\",\"name\":\"string\",\"version\":\"string\"},\"version\":\"string\",\"state\":\"ACTIVE\",\"transportInfo\":{\"id\":\"string\",\"endpoint\":{\"uris\":[\"http://www.google.com\"]},\"name\":\"string\",\"description\":\"string\",\"type\":\"REST_HTTP\",\"protocol\":\"string\",\"version\":\"string\",\"security\":{\"oAuth2Info\":{\"grantTypes\":[\"OAUTH2_AUTHORIZATION_CODE\",\"OAUTH2_RESOURCE_OWNER\"],\"tokenEndpoint\":\"string\"}},\"implSpecificInfo\":{}},\"serializer\":\"JSON\",\"scopeOfLocality\":\"MEC_SYSTEM\",\"consumedLocalOnly\":true,\"isLocal\":true}")
+        data = json.loads(
+            '{"livenessInterval":5,"_links":{"self":{"href":"http://www.google.com"},"liveness":{"href":"http://www.google.com"}},"serCategory":{"href":"http://www.google.com","id":"string","name":"string","version":"string"},"version":"string","state":"ACTIVE","transportInfo":{"id":"string","endpoint":{"uris":["http://www.google.com"]},"name":"string","description":"string","type":"REST_HTTP","protocol":"string","version":"string","security":{"oAuth2Info":{"grantTypes":["OAUTH2_AUTHORIZATION_CODE","OAUTH2_RESOURCE_OWNER"],"tokenEndpoint":"string"}},"implSpecificInfo":{}},"serializer":"JSON","scopeOfLocality":"MEC_SYSTEM","consumedLocalOnly":true,"isLocal":true}'
+        )
         serviceInfo = ServiceInfo.from_json(data)
         return serviceInfo
 
     @cherrypy.tools.json_in()
     @json_out(cls=NestedEncoder)
-    def applications_services_post(self,appInstanceId: str):
+    def applications_services_post(self, appInstanceId: str):
         """
         This method is used to create a mecService resource. This method is typically used in "service availability update and new service registration" procedure
 
@@ -59,7 +61,9 @@ class ApplicationServicesController:
         return serviceInfo
 
     @json_out(cls=NestedEncoder)
-    def applicaton_services_get_with_service_id(self,appInstanceId: str, serviceId: str):
+    def applicaton_services_get_with_service_id(
+        self, appInstanceId: str, serviceId: str
+    ):
         """
         This method retrieves information about a mecService resource. This method is typically used in "service availability query" procedure
 
@@ -72,26 +76,28 @@ class ApplicationServicesController:
         HTTP STATUS CODE: 200, 400, 403, 404
         """
         # TODO VALIDATE PARAMETERS (i.e mutually exclusive) AND CREATE QUERY
-        data = json.loads("{\"serInstanceId\":\"string\",\"livenessInterval\":5,\"_links\":{\"self\":{\"href\":\"http://www.google.com\"},\"liveness\":{\"href\":\"http://www.google.com\"}},\"version\":\"string\",\"state\":\"ACTIVE\",\"transportInfo\":{\"id\":\"string\",\"endpoint\":{\"uris\":[\"http://www.google.com\"]},\"name\":\"string\",\"description\":\"string\",\"type\":\"REST_HTTP\",\"protocol\":\"string\",\"version\":\"string\",\"security\":{\"oAuth2Info\":{\"grantTypes\":[\"OAUTH2_AUTHORIZATION_CODE\",\"OAUTH2_RESOURCE_OWNER\"],\"tokenEndpoint\":\"string\"}},\"implSpecificInfo\":{}},\"serializer\":\"JSON\",\"scopeOfLocality\":\"MEC_SYSTEM\",\"consumedLocalOnly\":true,\"isLocal\":true}")
+        data = json.loads(
+            '{"serInstanceId":"string","livenessInterval":5,"_links":{"self":{"href":"http://www.google.com"},"liveness":{"href":"http://www.google.com"}},"version":"string","state":"ACTIVE","transportInfo":{"id":"string","endpoint":{"uris":["http://www.google.com"]},"name":"string","description":"string","type":"REST_HTTP","protocol":"string","version":"string","security":{"oAuth2Info":{"grantTypes":["OAUTH2_AUTHORIZATION_CODE","OAUTH2_RESOURCE_OWNER"],"tokenEndpoint":"string"}},"implSpecificInfo":{}},"serializer":"JSON","scopeOfLocality":"MEC_SYSTEM","consumedLocalOnly":true,"isLocal":true}'
+        )
         serviceInfo = ServiceInfo.from_json(data)
         return serviceInfo
 
     @cherrypy.tools.json_in()
     @json_out(cls=NestedEncoder)
-    def application_services_put(self,appInstanceId: str, serviceId: str):
+    def application_services_put(self, appInstanceId: str, serviceId: str):
         """
-        This method updates the information about a mecService resource
+                This method updates the information about a mecService resource
 
-        :param appInstanceId: Represents a MEC application instance. Note that the appInstanceId is allocated by the MEC platform manager.
-        :type appInstanceId: String
-        :param serviceId: Represents a MEC service instance.
-        :type serviceId: String
-2
-        :request body: New ServiceInfo with updated "state" is included as entity body of the request
+                :param appInstanceId: Represents a MEC application instance. Note that the appInstanceId is allocated by the MEC platform manager.
+                :type appInstanceId: String
+                :param serviceId: Represents a MEC service instance.
+                :type serviceId: String
+        2
+                :request body: New ServiceInfo with updated "state" is included as entity body of the request
 
 
-        :return: ServiceInfo or ProblemDetails
-        HTTP STATUS CODE: 200, 400, 403, 404, 412
+                :return: ServiceInfo or ProblemDetails
+                HTTP STATUS CODE: 200, 400, 403, 404, 412
         """
         # TODO PUT ONLY NEEDS TO RECEIVE ONE UPDATABLE CRITERIA
         data = cherrypy.request.json
@@ -99,7 +105,7 @@ class ApplicationServicesController:
         return serviceInfo
 
     @json_out(cls=NestedEncoder)
-    def application_services_delete(self,appInstanceId: str, serviceId: str):
+    def application_services_delete(self, appInstanceId: str, serviceId: str):
         """
         This method deletes a mecService resource. This method is typically used in the service deregistration procedure.
 
