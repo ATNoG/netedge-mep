@@ -2,6 +2,8 @@ import enum
 from json import JSONEncoder
 import json
 from enum import Enum
+
+import cherrypy
 import validators
 from validators import ValidationFailure
 from typing import List
@@ -51,7 +53,8 @@ def json_out(cls):
     def json_out_wrapper(func):
         def inner(*args,**kwargs):
             object_to_be_serialized = func(*args,**kwargs)
-            return json.dumps(object_to_be_serialized,cls=cls)
+            cherrypy.response.headers["Content-Type"]="application/json"
+            return json.dumps(object_to_be_serialized,cls=cls).encode("utf-8")
         return inner
     return json_out_wrapper
 
