@@ -47,7 +47,7 @@ if __name__ == "__main__":
     # Application Services Controller #
     ###################################
 
-    mgmt_dispatcher.connect(name='Get service from InstanceId',
+    mgmt_dispatcher.connect(name='Get service from InstanceId and parameters',
                             action='applications_services_get',
                             controller=ApplicationServicesController,
                             route='/applications/:appInstanceId/services',
