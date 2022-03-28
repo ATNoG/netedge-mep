@@ -167,3 +167,19 @@ serviceinfo_schema = {
     "oneOf":[{"required":["serInstanceId"]},{"required":["serName"]},{"required":["serCategory"]}],
     "required":["version","state","serializer","_links"]
 }
+
+appreadyconfirmation_schema = {
+    "type":"object",
+    "properties":{
+        "indication":{"type":"string"}
+    },
+    "required":["indication"]
+}
+
+appterminationconfirmation_schema = {
+    "type":"object",
+    "properties":{
+        "operationAction":{"type":"string"}
+    },
+    "required":["operationAction"]
+}

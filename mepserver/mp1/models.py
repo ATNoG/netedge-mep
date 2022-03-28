@@ -528,6 +528,8 @@ class AppReadyConfirmation:
 
     @staticmethod
     def from_json(data:dict) -> AppReadyConfirmation:
+        # Validate the json via json schema
+        validate(instance=data,schema=appreadyconfirmation_schema)
         indication = IndicationType(data["indication"])
         return AppReadyConfirmation(indication = indication)
 
@@ -539,5 +541,7 @@ class AppTerminationConfirmation:
 
     @staticmethod
     def from_json(data:dict) -> AppTerminationConfirmation:
+        # Validate the json via json schema
+        validate(instance=data,schema=appterminationconfirmation_schema)
         operationAction = OperationActionType(data["operationAction"])
         return AppTerminationConfirmation(operationAction = operationAction)
