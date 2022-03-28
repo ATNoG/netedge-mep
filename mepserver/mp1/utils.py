@@ -9,7 +9,6 @@ from validators import ValidationFailure
 from typing import List
 
 
-
 def validate_uri(href: str) -> str:
     valid_href = validators.url(href)
     if isinstance(valid_href, ValidationFailure):
@@ -17,8 +16,7 @@ def validate_uri(href: str) -> str:
     return href
 
 
-def pick_identifier(data: dict,
-                    possible_identifiers: List[str]) -> str:
+def pick_identifier(data: dict, possible_identifiers: List[str]) -> str:
     """
     From the three possible identifiers picks the first it finds in the post value
 
@@ -48,20 +46,24 @@ def ignore_none_value(data: dict) -> dict:
     """
     return {key: val for key, val in data.items() if val is not None}
 
+
 # Decorator that receives a CLS to encode the json
 def json_out(cls):
     def json_out_wrapper(func):
-        def inner(*args,**kwargs):
-            object_to_be_serialized = func(*args,**kwargs)
-            cherrypy.response.headers["Content-Type"]="application/json"
-            return json.dumps(object_to_be_serialized,cls=cls).encode("utf-8")
+        def inner(*args, **kwargs):
+            object_to_be_serialized = func(*args, **kwargs)
+            cherrypy.response.headers["Content-Type"] = "application/json"
+            return json.dumps(object_to_be_serialized, cls=cls).encode("utf-8")
+
         return inner
+
     return json_out_wrapper
+
 
 class NestedEncoder(JSONEncoder):
     def default(self, obj):
         # If it is a class we created and is having trouble using json_dumps use our to_json class
-        if hasattr(obj, 'to_json'):
+        if hasattr(obj, "to_json"):
             return obj.to_json()
         # If it is a subclass of Enum just call the name value
         elif isinstance(obj, Enum):

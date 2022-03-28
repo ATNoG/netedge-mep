@@ -20,11 +20,13 @@ class LinkType:
 
     Section 6.3.2 - MEC 011
     """
-    def __init__(self,href: str):
+
+    def __init__(self, href: str):
         self.href = validate_uri(href)
 
     def to_json(self):
         return dict(href=self.href)
+
 
 class ProblemDetails:
     def __init__(self, type: str, title: str, status: int, detail: str, instance: str):
@@ -42,11 +44,14 @@ class ProblemDetails:
         self.instance = instance
 
     def to_json(self):
-        return dict(type=self.type,
-                    title=self.title,
-                    status=self.status,
-                    detail=self.detail,
-                    instance=self.instance)
+        return dict(
+            type=self.type,
+            title=self.title,
+            status=self.status,
+            detail=self.detail,
+            instance=self.instance,
+        )
+
 
 ####################################
 # Classes used by management api   #
@@ -57,6 +62,7 @@ class Subscription:
 
     Section 6.2.2
     """
+
     def __init__(self, href: str, subscriptionType: str):
         """
         :param href: URI referring to the subscription.
@@ -70,8 +76,9 @@ class Subscription:
         self.subscriptionType = subscriptionType
 
     def to_json(self):
-        return dict(href=self.href,
-                    subscriptionType=self.subscriptionType)
+        return dict(href=self.href, subscriptionType=self.subscriptionType)
+
+
 class Links:
     """
     Internal structure to be compliant with MEC 011
@@ -79,7 +86,12 @@ class Links:
     Section 6.2.2
     """
 
-    def __init__(self, _self: LinkType, subscriptions: List[Subscription] = None, liveness: LinkType = None):
+    def __init__(
+        self,
+        _self: LinkType,
+        subscriptions: List[Subscription] = None,
+        liveness: LinkType = None,
+    ):
         self.self = _self
         self.subscriptions = subscriptions
         self.liveness = liveness
@@ -88,20 +100,22 @@ class Links:
     def from_json(data: dict) -> Links:
         _self = LinkType(data["self"]["href"])
         subscriptions = None
-        if "subscriptions" in data and len(data["subscriptions"])>0:
-            subscriptions = [Subscription(**subscription) for subscription in data["subscriptions"]]
+        if "subscriptions" in data and len(data["subscriptions"]) > 0:
+            subscriptions = [
+                Subscription(**subscription) for subscription in data["subscriptions"]
+            ]
         liveness = None
         if "liveness" in data:
             liveness = LinkType(data["liveness"]["href"])
 
-        return Links(_self=_self,
-                     subscriptions=subscriptions,
-                     liveness=liveness)
+        return Links(_self=_self, subscriptions=subscriptions, liveness=liveness)
 
     def to_json(self):
-        return ignore_none_value(dict(self=self.self,
-                    subscriptions=self.subscriptions,
-                    liveness=self.liveness))
+        return ignore_none_value(
+            dict(
+                self=self.self, subscriptions=self.subscriptions, liveness=self.liveness
+            )
+        )
 
 
 class MecServiceMgmtApiSubscriptionLinkList:
@@ -110,21 +124,22 @@ class MecServiceMgmtApiSubscriptionLinkList:
 
     Section 6.2.2 - MEC 011
     """
-    def __init__(self,_links: Links):
+
+    def __init__(self, _links: Links):
         self._links = _links
 
     @staticmethod
-    def from_json(data:dict)->MecServiceMgmtApiSubscriptionLinkList:
-        #First validate the json via jsonschema
-        validate(instance=data,schema=mecservicemgmtapisubscriptionlinklist_schema)
+    def from_json(data: dict) -> MecServiceMgmtApiSubscriptionLinkList:
+        # First validate the json via jsonschema
+        validate(instance=data, schema=mecservicemgmtapisubscriptionlinklist_schema)
         _links = Links.from_json(data["_links"])
         return MecServiceMgmtApiSubscriptionLinkList(_links=_links)
 
     def to_json(self):
         return dict(_links=self._links)
 
-class CategoryRef:
 
+class CategoryRef:
     def __init__(self, href: str, id: str, name: str, version: str):
         """
         This type represents the category reference.
@@ -149,13 +164,18 @@ class CategoryRef:
 
     def to_json(self):
         # All required none should have value none thus there is no need to use ignore_none_val
-        return dict(href=self.href,
-                    id=self.id,
-                    name=self.name,
-                    version=self.version)
+        return dict(href=self.href, id=self.id, name=self.name, version=self.version)
+
 
 class FilteringCriteria:
-    def __init__(self, states: List[ServiceState], isLocal: bool, serInstanceId: List[str] = None, serNames: List[str] = None, serCategories: List[CategoryRef] = None):
+    def __init__(
+        self,
+        states: List[ServiceState],
+        isLocal: bool,
+        serInstanceId: List[str] = None,
+        serNames: List[str] = None,
+        serCategories: List[CategoryRef] = None,
+    ):
         """
         :param states: States of the services about which to report events. If the event is a state change, this filter represents the state after the change
         :type states: List[ServiceState]
@@ -186,34 +206,47 @@ class FilteringCriteria:
         isLocal = data["isLocal"]
 
         # If the user fills more than one of the mutually exclusive fields we pick one and set it
-        identifier = pick_identifier(data,possible_identifiers=["serInstanceId", "serNames", "serCategories"])
+        identifier = pick_identifier(
+            data, possible_identifiers=["serInstanceId", "serNames", "serCategories"]
+        )
         # Since only one is acceptable start all as none and then set only the one we got from the previous function
-        identifier_data = {"serCategories": None, "serNames": None, "serInstanceId": None}
+        identifier_data = {
+            "serCategories": None,
+            "serNames": None,
+            "serInstanceId": None,
+        }
         if identifier == "serCategories":
-            identifier_data["serCategories"] = [CategoryRef(**category) for category in data["serCategories"]]
+            identifier_data["serCategories"] = [
+                CategoryRef(**category) for category in data["serCategories"]
+            ]
         elif identifier == "serNames":
             identifier_data["serNames"] = data["serNames"]
         elif identifier == "serInstanceId":
             identifier_data["serInstanceId"] = data["serInstanceId"]
 
         # The object is created from the two known variables and from the dictionary setting only one identifier data
-        return FilteringCriteria(states=states,
-                                 isLocal=isLocal,
-                                 **identifier_data)
+        return FilteringCriteria(states=states, isLocal=isLocal, **identifier_data)
 
     def to_json(self):
         return ignore_none_value(
-                    dict(states=self.states,
-                        isLocal=self.isLocal,
-                        serInstanceId=self.serInstanceId,
-                        serNames=self.serNames,
-                        serCategories=self.serCategories)
+            dict(
+                states=self.states,
+                isLocal=self.isLocal,
+                serInstanceId=self.serInstanceId,
+                serNames=self.serNames,
+                serCategories=self.serCategories,
             )
+        )
+
 
 class SerAvailabilityNotificationSubscription:
-    def __init__(self, callbackReference: str, _links: Links,
-                 filteringCriteria: FilteringCriteria = None,
-                 subscriptionType: str = "SetAvailabilityNotificationSubscription"):
+    def __init__(
+        self,
+        callbackReference: str,
+        _links: Links,
+        filteringCriteria: FilteringCriteria = None,
+        subscriptionType: str = "SetAvailabilityNotificationSubscription",
+    ):
         """
 
         :param callbackReference: Shall be set to "SerAvailabilityNotificationSubscription".
@@ -237,22 +270,28 @@ class SerAvailabilityNotificationSubscription:
     @staticmethod
     def from_json(data: dict) -> SerAvailabilityNotificationSubscription:
         # validate the json via jsonschema
-        validate(instance=data,schema=seravailabilitynotificationsubscription_schema)
+        validate(instance=data, schema=seravailabilitynotificationsubscription_schema)
         _links = Links.from_json(data.pop("_links"))
         # FilteringCriteria is not a required request body parameter
         filteringCriteria = None
         if "filteringCriteria" in data:
-            filteringCriteria = FilteringCriteria.from_json(data.pop("filteringCriteria"))
-        return SerAvailabilityNotificationSubscription(_links=_links,
-                                                       filteringCriteria=filteringCriteria,
-                                                       **data)
+            filteringCriteria = FilteringCriteria.from_json(
+                data.pop("filteringCriteria")
+            )
+        return SerAvailabilityNotificationSubscription(
+            _links=_links, filteringCriteria=filteringCriteria, **data
+        )
+
     def to_json(self):
         return ignore_none_value(
-                    dict(callbackReference=self.callbackReference,
-                    _links=self._links,
-                    filteringCriteria=self.filteringCriteria,
-                    subscriptionType=self.subscriptionType)
+            dict(
+                callbackReference=self.callbackReference,
+                _links=self._links,
+                filteringCriteria=self.filteringCriteria,
+                subscriptionType=self.subscriptionType,
+            )
         )
+
 
 class OAuth2Info:
     def __init__(self, grantTypes: List[GrantTypes], tokenEndpoint: str):
@@ -274,18 +313,18 @@ class OAuth2Info:
         self.tokenEndpoint = tokenEndpoint
 
     @staticmethod
-    def from_json(data:dict) -> OAuth2Info:
+    def from_json(data: dict) -> OAuth2Info:
         # list(set()) to ignore possible duplicates from the user
         data["grantTypes"] = list(set(data["grantTypes"]))
         if 1 > len(data["grantTypes"]) > 4:
             raise InvalidGrantType
 
         grantTypes = [GrantTypes(grantType) for grantType in data.pop("grantTypes")]
-        return OAuth2Info(grantTypes=grantTypes,
-                          **data)
+        return OAuth2Info(grantTypes=grantTypes, **data)
 
     def to_json(self):
-        return dict(grantTypes=self.grantTypes,tokenEndpoint=self.tokenEndpoint)
+        return dict(grantTypes=self.grantTypes, tokenEndpoint=self.tokenEndpoint)
+
 
 class SecurityInfo:
     def __init__(self, oAuth2Info: OAuth2Info):
@@ -297,17 +336,19 @@ class SecurityInfo:
         self.oAuth2Info = oAuth2Info
 
     @staticmethod
-    def from_json(data:dict) -> SecurityInfo:
+    def from_json(data: dict) -> SecurityInfo:
         oAuth2Info = OAuth2Info.from_json(data["oAuth2Info"])
         return SecurityInfo(oAuth2Info=oAuth2Info)
 
     def to_json(self):
         return dict(oAuth2Info=self.oAuth2Info)
 
+
 class EndPointInfo:
     """
     Section 8.1.5.3
     """
+
     class Uris:
         def __init__(self, uris: List[str]):
             """
@@ -333,7 +374,7 @@ class EndPointInfo:
             self.port = port
 
         def to_json(self):
-            return dict(host=self.host,port=self.port)
+            return dict(host=self.host, port=self.port)
 
     class Addresses:
         def __init__(self, addresses: List[object]):
@@ -345,7 +386,7 @@ class EndPointInfo:
 
         @staticmethod
         def from_json(data: dict) -> EndPointInfo.Addresses:
-            addresses = [EndPointInfo.Address(host,port) for host,port in data]
+            addresses = [EndPointInfo.Address(host, port) for host, port in data]
             return EndPointInfo.Addresses(addresses)
 
         def to_json(self):
@@ -364,10 +405,20 @@ class EndPointInfo:
         if "uris" in data.keys():
             return EndPointInfo.Uris(uris=data["uris"])
 
+
 class TransportInfo:
-    def __init__(self, id: str, name: str, type: TransportType, version: str,
-                 endpoint: [EndPointInfo.Addresses,EndPointInfo.Uris,EndPointInfo.Alternative],
-                 security: SecurityInfo, description: str = "", implSpecificInfo: str = "",protocol: str = "HTTP"):
+    def __init__(
+        self,
+        id: str,
+        name: str,
+        type: TransportType,
+        version: str,
+        endpoint: [EndPointInfo.Addresses, EndPointInfo.Uris, EndPointInfo.Alternative],
+        security: SecurityInfo,
+        description: str = "",
+        implSpecificInfo: str = "",
+        protocol: str = "HTTP",
+    ):
         """
         :param id: The identifier of this transport.
         :type id: String
@@ -401,30 +452,44 @@ class TransportInfo:
         self.implSpecificInfo = implSpecificInfo
 
     @staticmethod
-    def from_json(data: dict)->TransportInfo:
+    def from_json(data: dict) -> TransportInfo:
         _type = TransportType(data.pop("type"))
         endpoint = EndPointInfo.from_json(data.pop("endpoint"))
         security = SecurityInfo.from_json(data.pop("security"))
-        return TransportInfo(type=_type,
-                             endpoint=endpoint,
-                             security=security,
-                             **data)
+        return TransportInfo(type=_type, endpoint=endpoint, security=security, **data)
+
     def to_json(self):
-        return ignore_none_value(dict(id=self.id,
-                                      name=self.name,
-                                      type=self.type,
-                                      protocol=self.protocol,
-                                      version=self.version,
-                                      endpoint=self.endpoint,
-                                      security=self.security,
-                                      description=self.description,
-                                      implSpecificInfo=self.implSpecificInfo))
+        return ignore_none_value(
+            dict(
+                id=self.id,
+                name=self.name,
+                type=self.type,
+                protocol=self.protocol,
+                version=self.version,
+                endpoint=self.endpoint,
+                security=self.security,
+                description=self.description,
+                implSpecificInfo=self.implSpecificInfo,
+            )
+        )
+
 
 class ServiceInfo:
-    def __init__(self, version: str,
-                 state: ServiceState, transportInfo: TransportInfo, serializer: SerializerType, _links: Links,
-                 livenessInterval: int, consumedLocalOnly: bool = True, isLocal: bool = True,
-                 scopeOfLocality: LocalityType = LocalityType.MEC_HOST ,serInstanceId: str = None, serName: str = None, serCategory: str = None):
+    def __init__(
+        self,
+        version: str,
+        state: ServiceState,
+        transportInfo: TransportInfo,
+        serializer: SerializerType,
+        _links: Links,
+        livenessInterval: int,
+        consumedLocalOnly: bool = True,
+        isLocal: bool = True,
+        scopeOfLocality: LocalityType = LocalityType.MEC_HOST,
+        serInstanceId: str = None,
+        serName: str = None,
+        serCategory: str = None,
+    ):
         """
         :param serInstanceId: Identifiers of service instances about which to report events
         :type serInstanceId: String
@@ -468,14 +533,14 @@ class ServiceInfo:
         self.livenessInterval = livenessInterval
 
     @staticmethod
-    def from_json(data:dict) -> ServiceInfo:
+    def from_json(data: dict) -> ServiceInfo:
         # Validate the json via jsonschema
-        validate(instance=data,schema=serviceinfo_schema)
+        validate(instance=data, schema=serviceinfo_schema)
         # Similar to FilteringCriteria but here serInstanceId, serName and serCategory can't be lists
-        possible_identifiers = ["serInstanceId","serName","serCategory"]
-        identifier = pick_identifier(data,possible_identifiers=possible_identifiers)
+        possible_identifiers = ["serInstanceId", "serName", "serCategory"]
+        identifier = pick_identifier(data, possible_identifiers=possible_identifiers)
         # Since only one is acceptable start all as none and then set only the one we got from the previous function
-        identifier_data = dict(zip(possible_identifiers,[None]*3))
+        identifier_data = dict(zip(possible_identifiers, [None] * 3))
         if identifier == "serCategory":
             identifier_data["serCategory"] = CategoryRef(**data["serCategory"])
         elif identifier == "serName":
@@ -483,9 +548,9 @@ class ServiceInfo:
         elif identifier == "serInstanceId":
             identifier_data["serInstanceId"] = data["serInstanceId"]
         # Remove the keys of identifier data
-        data.pop("serCategory",None)
-        data.pop("serName",None)
-        data.pop("serInstanceId",None)
+        data.pop("serCategory", None)
+        data.pop("serName", None)
+        data.pop("serInstanceId", None)
         # Each required element or element that can't be automatically generated from the unpacking is popped
         # to avoid having the function received the element twice and throwing and exception
         state = ServiceState(data.pop("state"))
@@ -496,26 +561,35 @@ class ServiceInfo:
             scopeOfLocality = LocalityType(data.pop("scopeOfLocality"))
 
         _links = Links.from_json(data.pop("_links"))
-        return ServiceInfo(state=state,
-                           transportInfo=transportInfo,
-                           serializer=serializer,
-                           scopeOfLocality=scopeOfLocality,
-                           _links=_links,
-                           **data,**identifier_data)
+        return ServiceInfo(
+            state=state,
+            transportInfo=transportInfo,
+            serializer=serializer,
+            scopeOfLocality=scopeOfLocality,
+            _links=_links,
+            **data,
+            **identifier_data,
+        )
 
     def to_json(self):
-        return ignore_none_value(dict(version=self.version,
-                                      serInstanceId=self.serInstanceId,
-                                      serName=self.serName,
-                                      serCategory=self.serCategory,
-                                      serializer=self.serializer,
-                                      _links=self._links,
-                                      scopeOfLocality=self.scopeOfLocality,
-                                      transportInfo=self.transportInfo,
-                                      state=self.state,
-                                      livenessInterval=self.livenessInterval,
-                                      consumedLocalOnly=self.consumedLocalOnly,
-                                      isLocal=self.isLocal))
+        return ignore_none_value(
+            dict(
+                version=self.version,
+                serInstanceId=self.serInstanceId,
+                serName=self.serName,
+                serCategory=self.serCategory,
+                serializer=self.serializer,
+                _links=self._links,
+                scopeOfLocality=self.scopeOfLocality,
+                transportInfo=self.transportInfo,
+                state=self.state,
+                livenessInterval=self.livenessInterval,
+                consumedLocalOnly=self.consumedLocalOnly,
+                isLocal=self.isLocal,
+            )
+        )
+
+
 ####################################
 # Classes used by support api      #
 ####################################
@@ -527,11 +601,12 @@ class AppReadyConfirmation:
         self.indication = indication
 
     @staticmethod
-    def from_json(data:dict) -> AppReadyConfirmation:
+    def from_json(data: dict) -> AppReadyConfirmation:
         # Validate the json via json schema
-        validate(instance=data,schema=appreadyconfirmation_schema)
+        validate(instance=data, schema=appreadyconfirmation_schema)
         indication = IndicationType(data["indication"])
-        return AppReadyConfirmation(indication = indication)
+        return AppReadyConfirmation(indication=indication)
+
 
 # In theory this class doesn't need to exist but since ETSI defined a post request body
 # it may be useful in the future (i.e new indications etc...)
@@ -540,8 +615,8 @@ class AppTerminationConfirmation:
         self.operationAction = operationAction
 
     @staticmethod
-    def from_json(data:dict) -> AppTerminationConfirmation:
+    def from_json(data: dict) -> AppTerminationConfirmation:
         # Validate the json via json schema
-        validate(instance=data,schema=appterminationconfirmation_schema)
+        validate(instance=data, schema=appterminationconfirmation_schema)
         operationAction = OperationActionType(data["operationAction"])
-        return AppTerminationConfirmation(operationAction = operationAction)
+        return AppTerminationConfirmation(operationAction=operationAction)
