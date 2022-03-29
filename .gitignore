@@ -192,3 +192,6 @@ dist/**
 .idea/sqlDataSources.xml
 .idea/dynamic.xml
 .idea/uiDesigner.xml
+
+# Tests directory
+internal-tests/

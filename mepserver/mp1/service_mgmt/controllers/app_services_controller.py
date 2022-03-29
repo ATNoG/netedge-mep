@@ -8,7 +8,10 @@ from mp1.models import *
 class ApplicationServicesController:
 
     @json_out(cls=NestedEncoder)
-    def applications_services_get(self, appInstanceId: str, **kwargs):
+    def applications_services_get(self, appInstanceId: str, ser_instance_id: List[str] = None,
+                                  ser_name: List[str] = None, ser_category_id: List[str] = None,
+                                  consumed_local_only: bool = False, is_local: bool = False,
+                                  scope_of_locality: str = ""):
         """
         This method retrieves information about a list of mecService resources. This method is typically used in "service availability query" procedure
 
@@ -16,13 +19,14 @@ class ApplicationServicesController:
         :param appInstanceId: Represents a MEC application instance. Note that the appInstanceId is allocated by the MEC platform manager.
         :type appInstanceId: String
 
-        Query Params - kwargs
+        Query Params
         :param ser_instance_id: A MEC application instance may use multiple ser_instance_ids as an input parameter to query the availability of a list of MEC service instances. Either "ser_instance_id" or "ser_name" or "ser_category_id" or none of them shall be present.
         :type ser_instance_id: List[String]
         :param ser_name: A MEC application instance may use multiple ser_names as an input parameter to query the availability of a list of MEC service instances. Either "ser_instance_id" or "ser_name" or "ser_category_id" or none of them shall be present.
         :type ser_name: List[String]
         :param ser_category_id: A MEC application instance may use ser_category_id as an input parameter to query the availability of a list of MEC service instances in a serCategory. Either "ser_instance_id" or "ser_name" or "ser_category_id" or none of them shall be present.
         :type ser_category_id: String
+
         :param consumed_local_only: Indicate whether the service can only be consumed by the MEC applications located in the same locality (as defined by scopeOfLocality) as this service instance.
         :type consumed_local_only: boolean
         :param is_local: Indicate whether the service is located in the same locality (as defined by scopeOfLocality) as the consuming MEC application.
