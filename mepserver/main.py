@@ -62,35 +62,45 @@ if __name__ == "__main__":
     # Application Services Controller #
     ###################################
 
-    mgmt_dispatcher.connect(name='Get service from InstanceId and parameters',
-                            action='applications_services_get',
-                            controller=ApplicationServicesController,
-                            route='/applications/:appInstanceId/services',
-                            conditions=dict(method=["GET"]))
+    mgmt_dispatcher.connect(
+        name="Get service from InstanceId and parameters",
+        action="applications_services_get",
+        controller=ApplicationServicesController,
+        route="/applications/:appInstanceId/services",
+        conditions=dict(method=["GET"]),
+    )
 
-    mgmt_dispatcher.connect(name="Create service for InstanceId",
-                            action="applications_services_post",
-                            controller=ApplicationServicesController,
-                            route="/applications/:appInstanceId/services",
-                            conditions=dict(method=["POST"]))
+    mgmt_dispatcher.connect(
+        name="Create service for InstanceId",
+        action="applications_services_post",
+        controller=ApplicationServicesController,
+        route="/applications/:appInstanceId/services",
+        conditions=dict(method=["POST"]),
+    )
 
-    mgmt_dispatcher.connect(name="Get service from InstanceId and ServiceId",
-                            action="applicaton_services_get_with_service_id",
-                            controller=ApplicationServicesController,
-                            route="/applications/:appInstanceId/services/:serviceId",
-                            conditions=dict(method=["GET"]))
+    mgmt_dispatcher.connect(
+        name="Get service from InstanceId and ServiceId",
+        action="applicaton_services_get_with_service_id",
+        controller=ApplicationServicesController,
+        route="/applications/:appInstanceId/services/:serviceId",
+        conditions=dict(method=["GET"]),
+    )
 
-    mgmt_dispatcher.connect(name="Put data into existing service",
-                            action="application_services_put",
-                            controller=ApplicationServicesController,
-                            route="/applications/:appInstanceId/services/:serviceId",
-                            conditions=dict(method=["PUT"]))
+    mgmt_dispatcher.connect(
+        name="Put data into existing service",
+        action="application_services_put",
+        controller=ApplicationServicesController,
+        route="/applications/:appInstanceId/services/:serviceId",
+        conditions=dict(method=["PUT"]),
+    )
 
-    mgmt_dispatcher.connect(name="Delete service",
-                            action="application_services_delete",
-                            controller=ApplicationServicesController,
-                            route="/applications/:appInstanceId/services/:serviceId",
-                            conditions=dict(method=["DELETE"]))
+    mgmt_dispatcher.connect(
+        name="Delete service",
+        action="application_services_delete",
+        controller=ApplicationServicesController,
+        route="/applications/:appInstanceId/services/:serviceId",
+        conditions=dict(method=["DELETE"]),
+    )
 
     #######################
     # Services Controller #
