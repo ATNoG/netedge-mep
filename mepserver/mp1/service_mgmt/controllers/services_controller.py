@@ -32,7 +32,6 @@ class ServicesController:
         :return: ServiceInfo or ProblemDetails
         HTTP STATUS CODE: 200, 400, 403, 404, 414
         """
-        cherrypy.log(ser_name)
         # TODO VALIDATE PARAMETERS (i.e mutually exclusive) AND CREATE QUERY
         data = json.loads(
             "{\"livenessInterval\":5,\"_links\":{\"self\":{\"href\":\"http://www.google.com\"},\"liveness\":{\"href\":\"http://www.google.com\"}},\"serCategory\":{\"href\":\"http://www.google.com\",\"id\":\"string\",\"name\":\"string\",\"version\":\"string\"},\"version\":\"string\",\"state\":\"ACTIVE\",\"transportInfo\":{\"id\":\"string\",\"endpoint\":{\"uris\":[\"http://www.google.com\"]},\"name\":\"string\",\"description\":\"string\",\"type\":\"REST_HTTP\",\"protocol\":\"string\",\"version\":\"string\",\"security\":{\"oAuth2Info\":{\"grantTypes\":[\"OAUTH2_AUTHORIZATION_CODE\"],\"tokenEndpoint\":\"string\"}},\"implSpecificInfo\":{}},\"serializer\":\"JSON\",\"scopeOfLocality\":\"MEC_SYSTEM\",\"consumedLocalOnly\":true,\"isLocal\":true}")
