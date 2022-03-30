@@ -5,7 +5,7 @@ import cherrypy
 
 from .utils import *
 from .enums import *
-from .model_exceptions import *
+from .mep_exceptions import *
 from .schemas import *
 
 ####################################

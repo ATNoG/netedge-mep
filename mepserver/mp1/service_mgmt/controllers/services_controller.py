@@ -5,6 +5,7 @@ from mp1.models import *
 
 
 class ServicesController:
+    @url_query_validator(cls=ServicesQueryValidator)
     @json_out(cls=NestedEncoder)
     def services_get(self,ser_instance_id: List[str] = None,
                                   ser_name: List[str] = None, ser_category_id: List[str] = None,

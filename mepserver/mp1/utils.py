@@ -2,12 +2,13 @@ import enum
 from json import JSONEncoder
 import json
 from enum import Enum
-
+from .mep_exceptions import *
 import cherrypy
 import validators
 from validators import ValidationFailure
 from typing import List
 
+from abc import ABC, abstractmethod
 
 def validate_uri(href: str) -> str:
     valid_href = validators.url(href)
@@ -56,9 +57,7 @@ def json_out(cls):
             return json.dumps(object_to_be_serialized, cls=cls).encode("utf-8")
 
         return inner
-
     return json_out_wrapper
-
 
 class NestedEncoder(JSONEncoder):
     def default(self, obj):
@@ -70,3 +69,47 @@ class NestedEncoder(JSONEncoder):
             return obj.name
         else:
             return json.JSONEncoder.default(self, obj)
+
+class UrlQueryValidator(ABC):
+    @property
+    @abstractmethod
+    def required_fields(self):
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def validate(**kwargs):
+        pass
+
+class ServicesQueryValidator(UrlQueryValidator):
+    required_fields = []
+
+    @staticmethod
+    def validate(**kwargs):
+        import logging
+
+        logger = logging.getLogger('InfluxDB Handler')
+        logger.setLevel(logging.DEBUG)
+        logger = logging.getLogger("nbi")
+        for i in kwargs:
+            cherrypy.log(i)
+            logger.debug(i)
+        logger.debug("hello")
+        return False
+
+
+def url_query_validator(cls):
+    def inner_wrapper(func):
+        def inner(*args,**kwargs):
+            # Args is the class (self arg)
+            # Kwargs are the actual function arguments that come after the self
+
+            # Check if the cls is a subclass of the abstract class QueryValidator
+            # This forces any new interface using the query_validator
+            if issubclass(cls,UrlQueryValidator):
+                if cls.validate(**kwargs):
+                    return func(*args, **kwargs)
+                raise InvalidQuery("Class needs to be subclass of UrlQueryValidator")
+            raise TypeError
+        return inner
+    return inner_wrapper

@@ -7,6 +7,8 @@ from mp1.models import *
 
 
 class ApplicationServicesController:
+
+    @url_query_validator(cls=ServicesQueryValidator)
     @json_out(cls=NestedEncoder)
     def applications_services_get(self, appInstanceId: str, ser_instance_id: List[str] = None,
                                   ser_name: List[str] = None, ser_category_id: List[str] = None,
