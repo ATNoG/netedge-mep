@@ -55,7 +55,6 @@ def json_out(cls):
             object_to_be_serialized = func(*args, **kwargs)
             cherrypy.response.headers["Content-Type"] = "application/json"
             return json.dumps(object_to_be_serialized, cls=cls).encode("utf-8")
-
         return inner
     return json_out_wrapper
 
@@ -71,32 +70,36 @@ class NestedEncoder(JSONEncoder):
             return json.JSONEncoder.default(self, obj)
 
 class UrlQueryValidator(ABC):
-    @property
+
+    @staticmethod
     @abstractmethod
-    def required_fields(self):
+    def get_required_fields():
+        """
+        function used by validate to obtain the required fields
+        a function is used instead of a parameter inside the validate function (i.e validate(**kwargs,required_fields=[a,b])
+        due to python only validating the function defaults on function definition
+        having mutable default arguments can lead to improper usage thus by defining the usage of the UrlQueryValidator
+        in this manner we "guide" the programmer to use the classes and methods properly
+        """
         pass
 
     @staticmethod
     @abstractmethod
     def validate(**kwargs):
+        """
+        function that validates the arguments passed in an urlquery according to mec 011
+        """
         pass
 
 class ServicesQueryValidator(UrlQueryValidator):
-    required_fields = []
 
     @staticmethod
     def validate(**kwargs):
-        import logging
+        return True
 
-        logger = logging.getLogger('InfluxDB Handler')
-        logger.setLevel(logging.DEBUG)
-        logger = logging.getLogger("nbi")
-        for i in kwargs:
-            cherrypy.log(i)
-            logger.debug(i)
-        logger.debug("hello")
-        return False
-
+    @staticmethod
+    def get_required_fields():
+        pass
 
 def url_query_validator(cls):
     def inner_wrapper(func):
@@ -113,3 +116,15 @@ def url_query_validator(cls):
             raise TypeError
         return inner
     return inner_wrapper
+
+def object_to_mongodb_dict(obj)->dict:
+    """
+    Takes any object and transforms it into a mongodb acceptable record
+
+    This process may seem weird due to the fact that we are dumping and then loading
+    The thought process is that we have classes that naturally give guarantees in terms of object structure and
+    validation, but this comes with the drawback that we don't have a dict to send to mongodb
+    For this process we use our existing NestedEncoder that properly generates a json string and then load said string,
+    allowing us to have a validated python dictionary that is a 1 to 1 representation of the underlying class
+    """
+    return json.loads(json.dumps(obj,cls=NestedEncoder))

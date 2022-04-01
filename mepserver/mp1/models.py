@@ -166,7 +166,6 @@ class CategoryRef:
         # All required none should have value none thus there is no need to use ignore_none_val
         return dict(href=self.href, id=self.id, name=self.name, version=self.version)
 
-
 class FilteringCriteria:
     def __init__(
         self,
@@ -202,26 +201,24 @@ class FilteringCriteria:
 
     @staticmethod
     def from_json(data: dict) -> FilteringCriteria:
+        validate(instance=data,schema=filteringcriteria_schema)
         states = [ServiceState[state] for state in data["states"]]
         isLocal = data["isLocal"]
 
-        # If the user fills more than one of the mutually exclusive fields we pick one and set it
-        identifier = pick_identifier(
-            data, possible_identifiers=["serInstanceId", "serNames", "serCategories"]
-        )
-        # Since only one is acceptable start all as none and then set only the one we got from the previous function
+        # Since only one is acceptable start all as none and then set only the one presented in the data
+        # the validate from json schema deals with the mutually exclusive part
         identifier_data = {
             "serCategories": None,
             "serNames": None,
             "serInstanceId": None,
         }
-        if identifier == "serCategories":
+        if "serCategories" in data:
             identifier_data["serCategories"] = [
                 CategoryRef(**category) for category in data["serCategories"]
             ]
-        elif identifier == "serNames":
+        elif "serNames" in data:
             identifier_data["serNames"] = data["serNames"]
-        elif identifier == "serInstanceId":
+        elif "serInstanceId" in data:
             identifier_data["serInstanceId"] = data["serInstanceId"]
 
         # The object is created from the two known variables and from the dictionary setting only one identifier data
@@ -291,7 +288,6 @@ class SerAvailabilityNotificationSubscription:
                 subscriptionType=self.subscriptionType,
             )
         )
-
 
 class OAuth2Info:
     def __init__(self, grantTypes: List[GrantTypes], tokenEndpoint: str):
@@ -536,23 +532,14 @@ class ServiceInfo:
     def from_json(data: dict) -> ServiceInfo:
         # Validate the json via jsonschema
         validate(instance=data, schema=serviceinfo_schema)
-        # Similar to FilteringCriteria but here serInstanceId, serName and serCategory can't be lists
-        possible_identifiers = ["serInstanceId", "serName", "serCategory"]
-        identifier = pick_identifier(data, possible_identifiers=possible_identifiers)
-        # Since only one is acceptable start all as none and then set only the one we got from the previous function
-        identifier_data = dict(zip(possible_identifiers, [None] * 3))
-        if identifier == "serCategory":
-            identifier_data["serCategory"] = CategoryRef(**data["serCategory"])
-        elif identifier == "serName":
-            identifier_data["serName"] = data["serName"]
-        elif identifier == "serInstanceId":
-            identifier_data["serInstanceId"] = data["serInstanceId"]
-        # Remove the keys of identifier data
-        data.pop("serCategory", None)
-        data.pop("serName", None)
-        data.pop("serInstanceId", None)
+        identifier_data = {}
+        categoryref = data.pop("serCategory", None)
+        if categoryref is not None:
+            identifier_data["serCategory"] = CategoryRef(**categoryref)
+        identifier_data["serName"] = data.pop("serName", None)
+
         # Each required element or element that can't be automatically generated from the unpacking is popped
-        # to avoid having the function received the element twice and throwing and exception
+        # to avoid having the function received the element twice and throwing an exception
         state = ServiceState(data.pop("state"))
         transportInfo = TransportInfo.from_json(data.pop("transportInfo"))
         serializer = SerializerType(data.pop("serializer"))
@@ -607,6 +594,12 @@ class AppReadyConfirmation:
         indication = IndicationType(data["indication"])
         return AppReadyConfirmation(indication=indication)
 
+    def to_json(self):
+        return ignore_none_value(
+            dict(
+                indication = self.indication
+            )
+        )
 
 # In theory this class doesn't need to exist but since ETSI defined a post request body
 # it may be useful in the future (i.e new indications etc...)
@@ -620,3 +613,10 @@ class AppTerminationConfirmation:
         validate(instance=data, schema=appterminationconfirmation_schema)
         operationAction = OperationActionType(data["operationAction"])
         return AppTerminationConfirmation(operationAction=operationAction)
+
+    def to_json(self):
+        return ignore_none_value(
+            dict(
+                operationAction = self.operationAction
+            )
+        )

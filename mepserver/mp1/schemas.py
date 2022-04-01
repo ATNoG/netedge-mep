@@ -53,6 +53,7 @@ filteringcriteria_schema = {
         "serName": {"type": "string"},
         "serCategory": categoryref_schema,
     },
+    "oneOf":["serInstanceId","serName","serCategory"]
 }
 
 seravailabilitynotificationsubscription_schema = {
@@ -171,16 +172,10 @@ serviceinfo_schema = {
                 "NFVI_NODE",
             ]
         },
-        "serInstanceId": {"type": "string"},
         "serName": {"type": "string"},
         "serCategory": categoryref_schema,
     },
-    "oneOf": [
-        {"required": ["serInstanceId"]},
-        {"required": ["serName"]},
-        {"required": ["serCategory"]},
-    ],
-    "required": ["version", "state", "serializer", "_links"],
+    "required": ["version", "state", "serializer", "_links","serName"],
 }
 
 appreadyconfirmation_schema = {
