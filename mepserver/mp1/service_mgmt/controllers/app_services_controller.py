@@ -52,14 +52,12 @@ class ApplicationServicesController:
 
         :note: ser_name, ser_category_id, ser_instance_id are mutually-exclusive only one should be used
 
-
         :return: ProblemDetails or ServiceInfo
         HTTP STATUS CODE: 200, 400, 403, 404, 414
         """
-
         # TODO VALIDATE PARAMETERS (i.e mutually exclusive) AND CREATE QUERY
         data = json.loads(
-            '{"livenessInterval":5,"_links":{"self":{"href":"http://www.google.com"},"liveness":{"href":"http://www.google.com"}},"serCategory":{"href":"http://www.google.com","id":"string","name":"string","version":"string"},"version":"string","state":"ACTIVE","transportInfo":{"id":"string","endpoint":{"uris":["http://www.google.com"]},"name":"string","description":"string","type":"REST_HTTP","protocol":"string","version":"string","security":{"oAuth2Info":{"grantTypes":["OAUTH2_AUTHORIZATION_CODE","OAUTH2_RESOURCE_OWNER"],"tokenEndpoint":"string"}},"implSpecificInfo":{}},"serializer":"JSON","scopeOfLocality":"MEC_SYSTEM","consumedLocalOnly":true,"isLocal":true}'
+            '{"livenessInterval":5,"serName":"ola","_links":{"self":{"href":"http://www.google.com"},"liveness":{"href":"http://www.google.com"}},"serCategory":{"href":"http://www.google.com","id":"string","name":"string","version":"string"},"version":"string","state":"ACTIVE","transportInfo":{"id":"string","endpoint":{"uris":["http://www.google.com"]},"name":"string","description":"string","type":"REST_HTTP","protocol":"string","version":"string","security":{"oAuth2Info":{"grantTypes":["OAUTH2_AUTHORIZATION_CODE","OAUTH2_RESOURCE_OWNER"],"tokenEndpoint":"string"}},"implSpecificInfo":{}},"serializer":"JSON","scopeOfLocality":"MEC_SYSTEM","consumedLocalOnly":true,"isLocal":true}'
         )
         serviceInfo = ServiceInfo.from_json(data)
         return serviceInfo
@@ -87,7 +85,7 @@ class ApplicationServicesController:
         # Check if the appInstanceId has already confirmed ready status
         if cherrypy.thread_data.db.count_documents("appStatus", dict(appInstanceId=appInstanceId)) > 0:
             # Store new service into the database
-            cherrypy.thread_data.db.create("service",object_to_mongodb_dict(serviceInfo))
+            cherrypy.thread_data.db.create("services",object_to_mongodb_dict(serviceInfo))
             #TODO EXECUTE THE CALLBACK ENDPOINT FOR APPINSTANCES THAT ALREADY SUBSCRIBED SERVICES OF THIS TYPE
             return serviceInfo
         else:

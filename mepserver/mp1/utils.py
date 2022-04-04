@@ -21,7 +21,7 @@ import cherrypy
 import validators
 from validators import ValidationFailure
 from typing import List
-
+from bson import SON
 from abc import ABC, abstractmethod
 
 def validate_uri(href: str) -> str:
@@ -61,6 +61,26 @@ def ignore_none_value(data: dict) -> dict:
     """
     return {key: val for key, val in data.items() if val is not None}
 
+def query_replace_none(query:dict)->dict:
+    """
+    Replaces the None values (i.e default values) of Url Query Parameters to wildcard mongodb query
+    This allows for easy and queries in the mongodb database
+    Due to nested queries we need to user dot notation and that implies playing with strings
+    Works for any type of json document (i.e various layers of nested documents)
+    """
+    new_query = {}
+    for key,value in query.items():
+        if isinstance(value, dict):
+            new_dict = query_replace_none(value)
+            # example: {"serCategory:{"id":"uuid"}}
+            # query must be find({"serCategory.id":"uuid"})
+            for new_key,value in new_dict.items():
+                new_query[f"{key}.{new_key}"] = value
+        elif value is None:
+            new_query[key] = {'$regex': '.*', '$options': 's'}
+        else:
+            new_query[key] = value
+    return new_query
 
 # Decorator that receives a CLS to encode the json
 def json_out(cls):
@@ -109,7 +129,45 @@ class ServicesQueryValidator(UrlQueryValidator):
 
     @staticmethod
     def validate(**kwargs):
-        return True
+        """
+        appInstanceId: List[str]
+        ser_instance_id: List[str]
+        ser_name: List[str]
+        ser_category_id: List[str]
+        consumed_local_only: bool
+        is_local: bool
+        scope_of_locality: str
+        """
+        # Used for scope_of_locality and is_local to transform the url query data to actual python values
+        bool_converter = {"true":True,"false":False,None:None}
+
+        ser_category_id = kwargs.get("ser_category_id")
+        ser_instance_id = kwargs.get("ser_instance_id")
+        ser_name = kwargs.get("ser_name")
+        # If 2 are none means only one is set and thus the mutual exclusive attribute is valid so we can move on
+        # with the validation
+        # If there are 3 it means there wasn't any query parameter
+        mutual_exclusive = {"ser_category_id": ser_category_id, "ser_instance_id": ser_instance_id, "ser_name": ser_name}
+        if list(mutual_exclusive.values()).count(None) > 2:
+            # Get the parameter that isn't None
+            mutually_exclusive_param = [key for key in mutual_exclusive if mutual_exclusive[key] is not None]
+            # If no parameter is None it means there wasn't any mutually exclusive parameter thus no need to split
+            if len(mutually_exclusive_param)>0:
+
+                # Parameter is a List of string so we want to split it in order to query in the next phase
+                kwargs[mutually_exclusive_param[0]] = kwargs[mutually_exclusive_param[0]].split(",")
+            # Validate the rest of the parameters against their supposed values
+            consumed_local_only = kwargs.get("consumed_local_only")
+            is_local = kwargs.get("is_local")
+            scope_of_locality = kwargs.get("scope_of_locality")
+            if consumed_local_only == "true" or "false" or None:
+                kwargs["consumed_local_only"] = bool_converter[consumed_local_only]
+                if is_local == "true" or "false" or None:
+                    kwargs["is_local"] = bool_converter[is_local]
+                    if (scope_of_locality is not None and not scope_of_locality.isdigit()) or scope_of_locality is None:
+                        return kwargs
+        raise InvalidQuery
+
 
     @staticmethod
     def get_required_fields():
@@ -124,9 +182,8 @@ def url_query_validator(cls):
             # Check if the cls is a subclass of the abstract class QueryValidator
             # This forces any new interface using the query_validator
             if issubclass(cls,UrlQueryValidator):
-                if cls.validate(**kwargs):
-                    return func(*args, **kwargs)
-                raise InvalidQuery("Class needs to be subclass of UrlQueryValidator")
+                new_kwargs = cls.validate(**kwargs)
+                return func(*args, **new_kwargs)
             raise TypeError
         return inner
     return inner_wrapper
