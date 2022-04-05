@@ -60,3 +60,9 @@ class IndicationType(Enum):
 class OperationActionType(Enum):
     STOPPING = "STOPPING"
     TERMINATING = "TERMINATING"
+
+class ChangeType(Enum):
+    ADDED = "ADDED" # New service was added
+    REMOVED = "REMOVED" # The service was removed
+    STATE_CHANGED = "STATE_CHANGED" # Only the state of the service was changed
+    ATTRIBUTES_CHANGED = "ATTRIBUTES_CHANGED" # At least one attribute of the service other than state was changed. The change may or may not include changing the state

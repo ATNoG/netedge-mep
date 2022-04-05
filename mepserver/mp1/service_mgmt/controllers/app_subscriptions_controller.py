@@ -13,6 +13,8 @@
 #     limitations under the License.
 
 import sys
+import requests
+import cherrypy
 
 sys.path.append("../../")
 from mp1.models import *
@@ -69,36 +71,33 @@ class ApplicationSubscriptionsController:
         :return: SerAvailabilityNotificationSubscription or ProblemDetails
         HTTP STATUS CODE: 201, 400, 403, 404
         """
-        if cherrypy.request.method == "POST":
-            # TODO VALIDATE THE JSON and use Instance ID
-            input_json = cherrypy.request.json
-            try:
-                availability_notification = (
-                    SerAvailabilityNotificationSubscription.from_json(input_json)
-                )
 
-                return availability_notification
-            except TypeError as e:
-                cherrypy.response.status = 400
-                problem_detail = ProblemDetails(
-                    type="",
-                    title="Invalid href",
-                    status=400,
-                    detail="Resource URI didn't meet specifications",
-                    instance="",
-                )
-                return problem_detail
-            except KeyError as e:
-                cherrypy.response.status = 400
-                problem_detail = ProblemDetails(
-                    type="",
-                    title="Invalid Request Data",
-                    status=400,
-                    detail="The request data contained one or more invalid parameters",
-                    instance="",
-                )
-                return problem_detail
-        # TODO MISSING CALLBACK
+        data = cherrypy.request.json
+        # The process of generating the class allows for "automatic" validation of the json and for filtering after saving to the database
+        availability_notification = SerAvailabilityNotificationSubscription.from_json(data)
+        cherrypy.thread_data.db.create("subscriptions", object_to_mongodb_dict(availability_notification, extra=dict(appInstanceId=appInstanceId)))
+
+        # After generating the subscription we need to, according to the users filtering criteria, get the services that match
+        # and process to execute a callback in order for him to know which services are up and running so that he can subscribe to them
+
+        # Obtain the notification filtering criteria
+        query = availability_notification.filteringCriteria.to_json(query=True)
+        # Query the database for services that are already registered and that match the filtering criteria
+        data = cherrypy.thread_data.db.query_col("services", query)
+        # Data is a pymongo cursor we first need to convert it into a json serializable object
+        # Since this query is supposed to return various valid Services we can simply convert into a list prior to encoding
+
+        # Send the callback to the specified url (i.e callbackreference)
+        # TODO Transform this into CELERY otherwise when a lot of services exist it will be a bottleneck
+        # TODO remove try except block - only used during development since we may not have the other webserver up
+        try:
+            requests.post(f"{availability_notification.callbackReference}/callbackReference",
+                          data=json.dumps(list(data), cls=NestedEncoder), headers={'Content-Type': 'application/json'})
+        except:
+            pass
+        # Return the data that was sent via the post message
+        return availability_notification
+
 
     @json_out(cls=NestedEncoder)
     def applications_subscriptions_get_with_subscription_id(

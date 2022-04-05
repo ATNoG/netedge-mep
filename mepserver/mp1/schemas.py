@@ -24,12 +24,14 @@ linktype_schema = {
         "href": {"type": "string"},
     },
     "required": ["href"],
+    "additionalAttributes": False
 }
 
 subscription_schema = {
     "type": "object",
     "properties": {"href": {"type": "string"}, "subscriptionType": {"type": "string"}},
     "required": ["href", "subscriptionType"],
+    "additionalAttributes": False
 }
 
 links_schema = {
@@ -40,12 +42,14 @@ links_schema = {
         "liveness": linktype_schema,
     },
     "required": ["self"],
+    "additionalAttributes": False
 }
 
 mecservicemgmtapisubscriptionlinklist_schema = {
     "type": "object",
     "properties": {"_links": links_schema},
     "required": ["_links"],
+    "additionalAttributes": False
 }
 
 categoryref_schema = {
@@ -57,29 +61,43 @@ categoryref_schema = {
         "version": {"type": "string"},
     },
     "required": ["href", "id", "name", "version"],
+    "additionalAttributes": False
 }
+
+# This approach is weird but "additionalProperties" wasn't cutting it and neither was required which forced
+# one of the mutually exclusive but not required methods to be present
+# the dependentschema might also fix this issue should be, if time allows, checked in the future
 
 filteringcriteria_schema = {
     "type": "object",
     "properties": {
-        "state": {"enum": ["ACTIVE", "INACTIVE"]},
+        "states": {"type":"array","items":{"type":"string","enum": ["ACTIVE", "INACTIVE","SUSPENDED"]}},
         "isLocal": {"type": "boolean"},
-        "serInstanceId": {"type": "string"},
-        "serName": {"type": "string"},
-        "serCategory": categoryref_schema,
+        "serNames": {"type":"array","items":{"type":"string"}},
+        "serInstanceIds": {"type":"array","items":{"type":"string"}},
+        "serCategories":{"type":"array","items":categoryref_schema}
     },
-    "oneOf":["serInstanceId","serName","serCategory"]
+    "oneOf":[ {"not": {"anyOf":[
+                            {"required":["serNames",
+                                         "serInstancesId",
+                                         "serCategories"]
+                            },
+                            ]}},
+            {"required":["serNames","serInstanceIds","serCategories"]},
+            ],
+    "additionalAttributes": False
 }
+
 
 seravailabilitynotificationsubscription_schema = {
     "type": "object",
     "properties": {
         "callbackReference": {"type": "string"},
-        "_links": links_schema,
         "filteringCriteria": filteringcriteria_schema,
         "subscriptionType": {"type": "string"},
     },
     "required": ["callbackReference", "subscriptionType"],
+    "additionalAttributes": False
 }
 oauth2info_schema = {
     "type": "object",
@@ -101,18 +119,21 @@ oauth2info_schema = {
         "tokenEndpoint": {"type": "string"},
     },
     "required": ["grantTypes"],
+    "additionalAttributes": False
 }
 
 securityinfo_schema = {
     "type": "object",
     "properties": {"oAuth2Info": oauth2info_schema},
     "required": ["oAuth2Info"],
+    "additionalAttributes": False
 }
 
 endpointinfo_address_schema = {
     "type": "object",
     "properties": {"host": {"type": "string"}, "port": {"type": "integer"}},
     "required": ["host", "port"],
+    "additionalAttributes": False
 }
 endpointinfo_addresses_schema = {
     "type": "object",
@@ -124,6 +145,7 @@ endpointinfo_addresses_schema = {
         }
     },
     "required": ["addresses"],
+    "additionalAttributes": False
 }
 
 endpointinfo_uris_schema = {
@@ -132,11 +154,13 @@ endpointinfo_uris_schema = {
         "uris": {"type": "array", "items": {"type": "string"}, "minItems": 1}
     },
     "required": ["uris"],
+    "additionalAttributes": False
 }
 
 implSpecificInfo_schema = {
     "type": "object",
     "properties": {"description": {"type": "string"}},
+    "additionalAttributes": False
 }
 
 transportinfo_schema = {
@@ -165,6 +189,7 @@ transportinfo_schema = {
         "protocol": {"type": "string"},
     },
     "required": ["id", "name", "type", "protocol", "version", "endpoint", "security"],
+    "additionalAttributes": False
 }
 
 serviceinfo_schema = {
@@ -173,7 +198,6 @@ serviceinfo_schema = {
         "version": {"type": "string"},
         "transportInfo": transportinfo_schema,
         "serializer": {"enum": ["JSON", "XML", "PROTOBUF3"]},
-        "_links": links_schema,
         "livenessInterval": {"type": "integer"},
         "consumedLocalOnly": {"type": "boolean"},
         "isLocal": {"type": "boolean"},
@@ -190,17 +214,20 @@ serviceinfo_schema = {
         "serName": {"type": "string"},
         "serCategory": categoryref_schema,
     },
-    "required": ["version", "state", "serializer", "_links","serName"],
+    "required": ["version", "state", "serializer","serName"],
+    "additionalAttributes": False
 }
 
 appreadyconfirmation_schema = {
     "type": "object",
     "properties": {"indication": {"type": "string"}},
     "required": ["indication"],
+    "additionalAttributes": False
 }
 
 appterminationconfirmation_schema = {
     "type": "object",
     "properties": {"operationAction": {"type": "string"}},
     "required": ["operationAction"],
+    "additionalAttributes": False
 }

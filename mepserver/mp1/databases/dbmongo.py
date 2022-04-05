@@ -1,9 +1,9 @@
 from .database_base import DatabaseBase
-from ..utils import query_replace_none
+from ..utils import mongodb_query_replace,NestedEncoder
 from pymongo import MongoClient
+from typing import Union
 import cherrypy
-import time
-from threading import Lock
+import json
 
 class MongoDb(DatabaseBase):
     def __init__(self,ip,port,database):
@@ -47,20 +47,27 @@ class MongoDb(DatabaseBase):
         data_to_be_removed = collection.delete_one(query)
         return data_to_be_removed
 
-    def query_col(self,col:str, query:dict):
+    def query_col(self,col:str, query: Union[dict,object,str]):
         """
         For a given collection return the results that match the query
         :param col: collection
         :param query: query to match one or more parameters of the data to queried
+        :type query: Either a predefined query in dict format, a json serializable class or a str
         :return: document removed from database
         """
         # Get the collection
         collection = self.client[col]
+        # Verify if query is a string or  dict/object
+        if isinstance(query,str):
+            query = json.loads(query)
+        else:
+            # Dump the object to a string and then reload it as a dict (this deals with the nested objects)
+            # This way it works for both Object with objects and Dicts with objects
+            query = json.loads(json.dumps(query,cls=NestedEncoder))
         # Removes the default values None to a wildcard query match in order to properly query mongodb
         # the wildcard is {$exists:true}
-        query = query_replace_none(query)
-        import json
-        cherrypy.log(json.dumps(query))
+        # Adds $in operator if the query contains a list
+        query = mongodb_query_replace(query)
         data = collection.find(query,{"_id":0})
         return data
 

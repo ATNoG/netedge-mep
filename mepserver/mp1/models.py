@@ -134,7 +134,8 @@ class Links:
 
 class MecServiceMgmtApiSubscriptionLinkList:
     """
-    This type represents a list of links related to currently existing subscriptions for a MEC application instance. This information is returned when sending a request to receive current subscriptions.
+    This type represents a list of links related to currently existing subscriptions for a MEC application instance.
+    This information is returned when sending a request to receive current subscriptions.
 
     Section 6.2.2 - MEC 011
     """
@@ -185,7 +186,7 @@ class FilteringCriteria:
         self,
         states: List[ServiceState],
         isLocal: bool,
-        serInstanceId: List[str] = None,
+        serInstanceIds: List[str] = None,
         serNames: List[str] = None,
         serCategories: List[CategoryRef] = None,
     ):
@@ -194,8 +195,8 @@ class FilteringCriteria:
         :type states: List[ServiceState]
         :param isLocal: Restrict event reporting to whether the service is local to the MEC platform where the subscription is managed.
         :type isLocal: Boolean
-        :param serInstanceId: Identifiers of service instances about which to report events
-        :type serInstanceId: String
+        :param serInstanceIds: Identifiers of service instances about which to report events
+        :type serInstanceIds: String
         :param serNames: Names of services about which to report events
         :type serNames: String
         :param serCategories: Categories of services about which to report events.
@@ -209,22 +210,26 @@ class FilteringCriteria:
         """
         self.states = states
         self.isLocal = isLocal
-        self.serInstanceId = serInstanceId
+        self.serInstanceIds = serInstanceIds
         self.serNames = serNames
         self.serCategories = serCategories
 
     @staticmethod
     def from_json(data: dict) -> FilteringCriteria:
         validate(instance=data,schema=filteringcriteria_schema)
-        states = [ServiceState[state] for state in data["states"]]
-        isLocal = data["isLocal"]
+        tmp_states = data.pop("states",None)
+        if tmp_states == None:
+            states = None
+        else:
+            states = [ServiceState[state] for state in tmp_states]
+        isLocal = data.pop("isLocal",None)
 
         # Since only one is acceptable start all as none and then set only the one presented in the data
-        # the validate from json schema deals with the mutually exclusive part
+        # the validation from json schema deals with the mutually exclusive part
         identifier_data = {
             "serCategories": None,
             "serNames": None,
-            "serInstanceId": None,
+            "serInstanceIds": None,
         }
         if "serCategories" in data:
             identifier_data["serCategories"] = [
@@ -232,22 +237,61 @@ class FilteringCriteria:
             ]
         elif "serNames" in data:
             identifier_data["serNames"] = data["serNames"]
-        elif "serInstanceId" in data:
-            identifier_data["serInstanceId"] = data["serInstanceId"]
+        elif "serInstanceIds" in data:
+            identifier_data["serInstanceIds"] = data["serInstanceId"]
 
         # The object is created from the two known variables and from the dictionary setting only one identifier data
         return FilteringCriteria(states=states, isLocal=isLocal, **identifier_data)
 
-    def to_json(self):
+    def to_json(self,query: bool = False):
+        """
+
+        :param query: Specifies if the json is meant to be used by a query in the database or not, this is due to the fact
+        that queries are made in the plural while the data stored is not (e.g stored as state but query is by stat)e
+        :type query: boolean
+        :return: dict containing all the parameters of the filtering criteria model
+        """
+        if bool:
+            return ignore_none_value(dict(
+                state=self.states,
+                isLocal=self.isLocal,
+                serInstanceId=self.serInstanceIds,
+                serName=self.serNames,
+                serCategorie=self.serCategories
+            ))
         return ignore_none_value(
             dict(
                 states=self.states,
                 isLocal=self.isLocal,
-                serInstanceId=self.serInstanceId,
+                serInstanceIds=self.serInstanceIds,
                 serNames=self.serNames,
-                serCategories=self.serCategories,
+                serCategories=self.serCategories
             )
         )
+
+class ServiceAvailabilityNotification:
+    def __init__(self,serviceReferences: List[ServiceReferences], _links: Subscription, notificationType: str = "SerAvailabilityNotificationSubscription",):
+        """
+
+        :param serviceReferences: List of links to services whose availability has changed.
+        :type serviceReferences: List of ServiceReferences
+        :param _links: Object containing hyperlinks related to the resource.
+        :type _links: Subscription
+        :param notificationType: hall be set to "SerAvailabilityNotification"
+        :type notificationType: String
+
+        Section 8.1.4.2
+        """
+        self.notificationType = notificationType
+        self.serviceReferences = serviceReferences
+        self._links = _links
+
+    class ServiceReferences:
+        def __init__(self, link: LinkType, serInstanceId: str, state: ServiceState, changeType: ChangeType):
+            self.link = link
+            self.serInstanceId = serInstanceId
+            self.state = state
+            self.changeType = changeType
 
 
 class SerAvailabilityNotificationSubscription:
@@ -260,7 +304,7 @@ class SerAvailabilityNotificationSubscription:
     ):
         """
 
-        :param callbackReference: Shall be set to "SerAvailabilityNotificationSubscription".
+        :param callbackReference: URI selected by the MEC application instance to receive notifications on the subscribed MEC service availability information. This shall be included in both the request and the response.".
         :type callbackReference: String
         :param _links: Object containing hyperlinks related to the resource. This shall only be included in the HTTP responses.
         :type _links: str (String is validated to be a correct URI)
@@ -282,16 +326,13 @@ class SerAvailabilityNotificationSubscription:
     def from_json(data: dict) -> SerAvailabilityNotificationSubscription:
         # validate the json via jsonschema
         validate(instance=data, schema=seravailabilitynotificationsubscription_schema)
-        _links = Links.from_json(data.pop("_links"))
         # FilteringCriteria is not a required request body parameter
         filteringCriteria = None
         if "filteringCriteria" in data:
             filteringCriteria = FilteringCriteria.from_json(
                 data.pop("filteringCriteria")
             )
-        return SerAvailabilityNotificationSubscription(
-            _links=_links, filteringCriteria=filteringCriteria, **data
-        )
+        return SerAvailabilityNotificationSubscription(filteringCriteria=filteringCriteria, **data)
 
     def to_json(self):
         return ignore_none_value(
@@ -561,13 +602,11 @@ class ServiceInfo:
         if "scopeOfLocality" in data.keys():
             scopeOfLocality = LocalityType(data.pop("scopeOfLocality"))
 
-        _links = Links.from_json(data.pop("_links"))
         return ServiceInfo(
             state=state,
             transportInfo=transportInfo,
             serializer=serializer,
             scopeOfLocality=scopeOfLocality,
-            _links=_links,
             **data,
             **identifier_data,
         )
