@@ -36,7 +36,7 @@ class LinkType:
     """
 
     def __init__(self, href: str):
-        self.href = validate_uri(href)
+        self.href = href
 
     def to_json(self):
         return dict(href=self.href)
@@ -77,16 +77,16 @@ class Subscription:
     Section 6.2.2
     """
 
-    def __init__(self, href: str, subscriptionType: str):
+    def __init__(self, href: str, subscriptionType: str = "SerAvailabilityNotificationSubscription"):
         """
-        :param href: URI referring to the subscription.
-        :type href: str (String is validated to be a correct URI)
+        :param href: URI referring to the subscription. (isn't a real URI but the path to something in our MEP)
+        :type href: str
         :param subscriptionType: Type of the subscription.
         :type subscriptionType: str
 
         Raises TypeError
         """
-        self.href = validate_uri(href)
+        self.href = href
         self.subscriptionType = subscriptionType
 
     def to_json(self):
@@ -102,7 +102,7 @@ class Links:
 
     def __init__(
         self,
-        _self: LinkType,
+        _self: LinkType = None,
         subscriptions: List[Subscription] = None,
         liveness: LinkType = None,
     ):
@@ -112,9 +112,11 @@ class Links:
 
     @staticmethod
     def from_json(data: dict) -> Links:
+        validate(instance=data,schema=links_schema)
         _self = LinkType(data["self"]["href"])
         subscriptions = None
         if "subscriptions" in data and len(data["subscriptions"]) > 0:
+            cherrypy.log(json.dumps(data["subscriptions"]))
             subscriptions = [
                 Subscription(**subscription) for subscription in data["subscriptions"]
             ]
@@ -243,22 +245,7 @@ class FilteringCriteria:
         # The object is created from the two known variables and from the dictionary setting only one identifier data
         return FilteringCriteria(states=states, isLocal=isLocal, **identifier_data)
 
-    def to_json(self,query: bool = False):
-        """
-
-        :param query: Specifies if the json is meant to be used by a query in the database or not, this is due to the fact
-        that queries are made in the plural while the data stored is not (e.g stored as state but query is by stat)e
-        :type query: boolean
-        :return: dict containing all the parameters of the filtering criteria model
-        """
-        if bool:
-            return ignore_none_value(dict(
-                state=self.states,
-                isLocal=self.isLocal,
-                serInstanceId=self.serInstanceIds,
-                serName=self.serNames,
-                serCategorie=self.serCategories
-            ))
+    def to_json(self):
         return ignore_none_value(
             dict(
                 states=self.states,
@@ -298,7 +285,7 @@ class SerAvailabilityNotificationSubscription:
     def __init__(
         self,
         callbackReference: str,
-        _links: Links,
+        _links: Links = None,
         filteringCriteria: FilteringCriteria = None,
         subscriptionType: str = "SetAvailabilityNotificationSubscription",
     ):
@@ -532,8 +519,8 @@ class ServiceInfo:
         state: ServiceState,
         transportInfo: TransportInfo,
         serializer: SerializerType,
-        _links: Links,
         livenessInterval: int,
+        _links: Links = None,
         consumedLocalOnly: bool = True,
         isLocal: bool = True,
         scopeOfLocality: LocalityType = LocalityType.MEC_HOST,

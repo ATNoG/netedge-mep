@@ -80,7 +80,12 @@ class ApplicationServicesController:
         # The process of generating the class allows for "automatic" validation of the json
         serviceInfo = ServiceInfo.from_json(data)
         # Add serInstanceId (uuid) to serviceInfo according to Section 8.1.2.2
+        # serInstaceId is used as serviceId appServices
         serviceInfo.serInstanceId = str(uuid.uuid4())
+        # Add _links data to serviceInfo
+        server_self_referencing_uri = cherrypy.url(qs=cherrypy.request.query_string, relative='server')
+        _links = Links(liveness=LinkType(f"{server_self_referencing_uri}/{serviceInfo.serInstanceId}/liveness"))
+        serviceInfo._links = _links
         # TODO serCategory IF NOT PRESENT NEEDS TO BE SET BY MEP (SOMEHOW TELL ME ETSI)
         # Check if the appInstanceId has already confirmed ready status
         if cherrypy.thread_data.db.count_documents("appStatus", dict(appInstanceId=appInstanceId)) > 0:

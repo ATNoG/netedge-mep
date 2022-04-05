@@ -47,15 +47,21 @@ class MongoDb(DatabaseBase):
         data_to_be_removed = collection.delete_one(query)
         return data_to_be_removed
 
-    def query_col(self,col:str, query: Union[dict,object,str]):
+    def query_col(self, col:str, query: Union[dict,object,str], fields=None, find_one = False):
         """
         For a given collection return the results that match the query
-        :param col: collection
+        :param col: collection to be queried
+        :type col: str
         :param query: query to match one or more parameters of the data to queried
         :type query: Either a predefined query in dict format, a json serializable class or a str
+        :param fields: fields to be obtained (according to the mongodb documentation)
+        :type fields: dict
         :return: document removed from database
         """
         # Get the collection
+        if fields is None:
+            fields = {}
+
         collection = self.client[col]
         # Verify if query is a string or  dict/object
         if isinstance(query,str):
@@ -68,7 +74,11 @@ class MongoDb(DatabaseBase):
         # the wildcard is {$exists:true}
         # Adds $in operator if the query contains a list
         query = mongodb_query_replace(query)
-        data = collection.find(query,{"_id":0})
+        # Query the collection according to query and obtain the fields specified in fields
+        if find_one:
+            data = collection.find_one(query,{"_id":0}|fields)
+        else:
+            data = collection.find(query,{"_id":0}|fields)
         return data
 
     def count_documents(self,col:str,query:dict):

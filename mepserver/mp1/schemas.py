@@ -24,14 +24,14 @@ linktype_schema = {
         "href": {"type": "string"},
     },
     "required": ["href"],
-    "additionalAttributes": False
+    "additionalProperties": False
 }
 
 subscription_schema = {
     "type": "object",
     "properties": {"href": {"type": "string"}, "subscriptionType": {"type": "string"}},
-    "required": ["href", "subscriptionType"],
-    "additionalAttributes": False
+    "required": ["href"],
+    "additionalProperties": False
 }
 
 links_schema = {
@@ -42,14 +42,14 @@ links_schema = {
         "liveness": linktype_schema,
     },
     "required": ["self"],
-    "additionalAttributes": False
+    "additionalProperties": False
 }
 
 mecservicemgmtapisubscriptionlinklist_schema = {
     "type": "object",
     "properties": {"_links": links_schema},
     "required": ["_links"],
-    "additionalAttributes": False
+    "additionalProperties": False
 }
 
 categoryref_schema = {
@@ -61,7 +61,7 @@ categoryref_schema = {
         "version": {"type": "string"},
     },
     "required": ["href", "id", "name", "version"],
-    "additionalAttributes": False
+    "additionalProperties": False
 }
 
 # This approach is weird but "additionalProperties" wasn't cutting it and neither was required which forced
@@ -85,7 +85,7 @@ filteringcriteria_schema = {
                             ]}},
             {"required":["serNames","serInstanceIds","serCategories"]},
             ],
-    "additionalAttributes": False
+    "additionalProperties": False
 }
 
 
@@ -96,8 +96,8 @@ seravailabilitynotificationsubscription_schema = {
         "filteringCriteria": filteringcriteria_schema,
         "subscriptionType": {"type": "string"},
     },
+    "additionalProperties": False,
     "required": ["callbackReference", "subscriptionType"],
-    "additionalAttributes": False
 }
 oauth2info_schema = {
     "type": "object",
@@ -119,21 +119,21 @@ oauth2info_schema = {
         "tokenEndpoint": {"type": "string"},
     },
     "required": ["grantTypes"],
-    "additionalAttributes": False
+    "additionalProperties": False
 }
 
 securityinfo_schema = {
     "type": "object",
     "properties": {"oAuth2Info": oauth2info_schema},
     "required": ["oAuth2Info"],
-    "additionalAttributes": False
+    "additionalProperties": False
 }
 
 endpointinfo_address_schema = {
     "type": "object",
     "properties": {"host": {"type": "string"}, "port": {"type": "integer"}},
     "required": ["host", "port"],
-    "additionalAttributes": False
+    "additionalProperties": False
 }
 endpointinfo_addresses_schema = {
     "type": "object",
@@ -145,7 +145,7 @@ endpointinfo_addresses_schema = {
         }
     },
     "required": ["addresses"],
-    "additionalAttributes": False
+    "additionalProperties": False
 }
 
 endpointinfo_uris_schema = {
@@ -154,13 +154,13 @@ endpointinfo_uris_schema = {
         "uris": {"type": "array", "items": {"type": "string"}, "minItems": 1}
     },
     "required": ["uris"],
-    "additionalAttributes": False
+    "additionalProperties": False
 }
 
 implSpecificInfo_schema = {
     "type": "object",
     "properties": {"description": {"type": "string"}},
-    "additionalAttributes": False
+    "additionalProperties": False
 }
 
 transportinfo_schema = {
@@ -168,7 +168,7 @@ transportinfo_schema = {
     "properties": {
         "id": {"type": "string"},
         "name": {"type": "string"},
-        "type:": {
+        "type": {
             "enum": [
                 "REST_HTTP",
                 "MB_TOPIC_BASED",
@@ -189,7 +189,7 @@ transportinfo_schema = {
         "protocol": {"type": "string"},
     },
     "required": ["id", "name", "type", "protocol", "version", "endpoint", "security"],
-    "additionalAttributes": False
+    "additionalProperties": False
 }
 
 serviceinfo_schema = {
@@ -211,23 +211,24 @@ serviceinfo_schema = {
                 "NFVI_NODE",
             ]
         },
+        "state": {"enum":["ACTIVE","INACTIVE","SUSPENDED"]},
         "serName": {"type": "string"},
         "serCategory": categoryref_schema,
     },
     "required": ["version", "state", "serializer","serName"],
-    "additionalAttributes": False
+    "additionalProperties": False
 }
 
 appreadyconfirmation_schema = {
     "type": "object",
     "properties": {"indication": {"type": "string"}},
     "required": ["indication"],
-    "additionalAttributes": False
+    "additionalProperties": False
 }
 
 appterminationconfirmation_schema = {
     "type": "object",
     "properties": {"operationAction": {"type": "string"}},
     "required": ["operationAction"],
-    "additionalAttributes": False
+    "additionalProperties": False
 }
