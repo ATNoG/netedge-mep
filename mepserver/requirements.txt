@@ -34,4 +34,3 @@ validators==0.18.2
 zc.lockfile==2.0
 zipp==3.7.0
 pymongo==4.0.2
-celery==5.2.5

@@ -1,18 +1,27 @@
-# Default values for charts.
+# Default values for mepchart.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
 replicaCount: 1
 
 image:
-  repository: nginx
+  repository: docker.io/motamiguel/mepservernginx
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  tag: "latest"
 
 imagePullSecrets: []
 nameOverride: ""
-fullnameOverride: ""
+fullnameOverride: "mep-server"
+
+mep:
+  internalPort: 8080
+  args:
+    mongodb_addr: "127.0.0.1"
+    mongodb_port: "27017"
+    mongodb_database: "mep"
+    mongodb_password: "admin"
+    mongodb_username: "admin"
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -37,7 +46,7 @@ securityContext: {}
   # runAsUser: 1000
 
 service:
-  type: ClusterIP
+  type: NodePort
   port: 80
 
 ingress:

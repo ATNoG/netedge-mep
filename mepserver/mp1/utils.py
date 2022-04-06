@@ -12,7 +12,6 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-import enum
 from json import JSONEncoder
 import json
 from enum import Enum
@@ -21,7 +20,7 @@ import cherrypy
 import validators
 from validators import ValidationFailure
 from typing import List
-from bson import SON
+import argparse
 from abc import ABC, abstractmethod
 
 def validate_uri(href: str) -> str:
@@ -218,3 +217,19 @@ def object_to_mongodb_dict(obj, extra: dict = None)->dict:
     if extra is not None:
         return_data = return_data | extra
     return return_data
+
+
+def check_port(port, base=1024):
+    """
+    Check if an int port number is valid
+    Valid is bigger than base port number
+
+    :param port: Port number
+    :type port: integer
+    :param base: Base port number (i.e lower limit)
+    :type base: integer
+    """
+    value = int(port)
+    if value <= base:
+        raise argparse.ArgumentTypeError('%s is an invalid positive int value' % value)
+    return value
