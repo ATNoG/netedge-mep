@@ -146,7 +146,7 @@ class ServicesQueryValidator(UrlQueryValidator):
         scope_of_locality: str
         """
         # Used for scope_of_locality and is_local to transform the url query data to actual python values
-        bool_converter = {"true":True,"false":False,None:None}
+        bool_converter = {"true":True,"false":False,None:None,False:False,True:True}
 
         ser_category_id = kwargs.get("ser_category_id")
         ser_instance_id = kwargs.get("ser_instance_id")
@@ -155,12 +155,11 @@ class ServicesQueryValidator(UrlQueryValidator):
         # with the validation
         # If there are 3 it means there wasn't any query parameter
         mutual_exclusive = {"ser_category_id": ser_category_id, "ser_instance_id": ser_instance_id, "ser_name": ser_name}
-        if list(mutual_exclusive.values()).count(None) > 2:
+        if list(mutual_exclusive.values()).count(None) >= 2:
             # Get the parameter that isn't None
             mutually_exclusive_param = [key for key in mutual_exclusive if mutual_exclusive[key] is not None]
             # If no parameter is None it means there wasn't any mutually exclusive parameter thus no need to split
             if len(mutually_exclusive_param)>0:
-
                 # Parameter is a List of string so we want to split it in order to query in the next phase
                 kwargs[mutually_exclusive_param[0]] = kwargs[mutually_exclusive_param[0]].split(",")
             # Validate the rest of the parameters against their supposed values
