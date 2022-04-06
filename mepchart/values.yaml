@@ -16,6 +16,7 @@ fullnameOverride: "mep-server"
 
 mep:
   internalPort: 8080
+  filePath: "/home/netedge/main.py"
   args:
     mongodb_addr: "127.0.0.1"
     mongodb_port: "27017"

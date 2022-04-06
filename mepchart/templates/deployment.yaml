@@ -39,7 +39,7 @@ spec:
               protocol: TCP
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          command: ["python3"]
+          command: ["python3", {{ .Values.mep.filePath }}]
           args:
           {{- range $key, $value := .Values.mep.args   }}
             {{- if $value }}
