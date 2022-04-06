@@ -74,6 +74,7 @@ class MongoDb(DatabaseBase):
         # the wildcard is {$exists:true}
         # Adds $in operator if the query contains a list
         query = mongodb_query_replace(query)
+        cherrypy.log(json.dumps(query))
         # Query the collection according to query and obtain the fields specified in fields
         if find_one:
             data = collection.find_one(query,{"_id":0}|fields)

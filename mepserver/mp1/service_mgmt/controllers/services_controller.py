@@ -46,7 +46,6 @@ class ServicesController:
         :return: ServiceInfo or ProblemDetails
         HTTP STATUS CODE: 200, 400, 403, 404, 414
         """
-        cherrypy.log("ola")
         query = dict(serInstanceId=ser_instance_id,
                      serName=ser_name,
                      serCategory=dict(id=ser_category_id),

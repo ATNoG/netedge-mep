@@ -70,7 +70,7 @@ def mongodb_query_replace(query:dict)->dict:
 
     Yes, this may seem overkill if we think in terms of mongodb, but since this is used by various types of queries,
     where we don't actually know if the value is going to be None or not it's easier to parse it like this instead of
-    validating each and every type of class
+    validating each and every type of class and then only sending the ones needed to the query
     """
     new_query = {}
     for key,value in query.items():
@@ -145,7 +145,8 @@ class ServicesQueryValidator(UrlQueryValidator):
         scope_of_locality: str
         """
         # Used for scope_of_locality and is_local to transform the url query data to actual python values
-        bool_converter = {"true":True,"false":False,None:None,False:False,True:True}
+        # if there is no value for the query we will query for both of the possible boolean values
+        bool_converter = {"true":True,"false":False,None:[True,False]}
 
         ser_category_id = kwargs.get("ser_category_id")
         ser_instance_id = kwargs.get("ser_instance_id")
@@ -158,7 +159,7 @@ class ServicesQueryValidator(UrlQueryValidator):
             # Get the parameter that isn't None
             mutually_exclusive_param = [key for key in mutual_exclusive if mutual_exclusive[key] is not None]
             # If no parameter is None it means there wasn't any mutually exclusive parameter thus no need to split
-            if len(mutually_exclusive_param)>0:
+            if len(mutually_exclusive_param) > 0:
                 # Parameter is a List of string so we want to split it in order to query in the next phase
                 kwargs[mutually_exclusive_param[0]] = kwargs[mutually_exclusive_param[0]].split(",")
             # Validate the rest of the parameters against their supposed values

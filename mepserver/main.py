@@ -192,9 +192,9 @@ def main(database: Type[DatabaseBase]):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Multi-Access Edge Computing Platform')
 
-    parser.add_argument('--mongodb_addr', help='MongoDB port')
+    parser.add_argument('--mongodb_addr', help='MongoDB Address', default="127.0.0.1")
     parser.add_argument('--mongodb_port', type=check_port, help='MongoDB port', default=27017)
-    parser.add_argument('--mongodb_database', help="Database inside MongoDB")
+    parser.add_argument('--mongodb_database', help="Database inside MongoDB", default="mep")
     parser.add_argument('--mongodb_password', help="Password to access MongoDB")
     parser.add_argument('--mongodb_username', help="Username to acces MongoDB")
 
