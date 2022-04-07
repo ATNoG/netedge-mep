@@ -173,7 +173,7 @@ def main(database: Type[DatabaseBase]):
         conditions=dict(method=["GET"]),
     )
 
-
+    cherrypy.config.update({'server.socket_host':'0.0.0.0','server.socket_port': 8080})
     supp_conf = {"/": {"request.dispatch": support_dispatcher}}
     cherrypy.tree.mount(None, "/mec_app_support/v1", config=supp_conf)
     mgmt_conf = {"/": {"request.dispatch": mgmt_dispatcher}}
