@@ -13,11 +13,14 @@
 #     limitations under the License.
 import json
 import sys
+import time
+
 import requests
 import cherrypy
 import uuid
 sys.path.append("../../")
 from mp1.models import *
+from .callbacks_controller import CallbackController
 
 
 class ApplicationSubscriptionsController:
@@ -88,22 +91,14 @@ class ApplicationSubscriptionsController:
         data = cherrypy.thread_data.db.query_col("services", query,fields=dict(_links=0))
         # Data is a pymongo cursor we first need to convert it into a json serializable object
         # Since this query is supposed to return various valid Services we can simply convert into a list prior to encoding
-
-        # Send the callback to the specified url (i.e callbackreference)
-        # TODO Transform this into asyncio otherwise when a lot of services exist it will be a bottleneck
-        # TODO remove try except block - only used during development since we may not have the other webserver up
-        try:
-            requests.post(f"{availability_notification.callbackReference}",
-                          data=json.dumps(list(data), cls=NestedEncoder), headers={'Content-Type': 'application/json'})
-        except:
-            pass
+        # Attempt to execute the callback
+        CallbackController.execute_callback(availability_notification=availability_notification,data=data)
 
         # Return the data that was sent via the post message with added _links that references to current subscriptionId
         server_self_referencing_uri = cherrypy.url(qs=cherrypy.request.query_string, relative='server')
         _links = Links(_self=LinkType(f"{server_self_referencing_uri}/{subscriptionId}"))
         availability_notification._links = _links
         return availability_notification
-
 
     @json_out(cls=NestedEncoder)
     def applications_subscriptions_get_with_subscription_id(
