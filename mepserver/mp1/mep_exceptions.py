@@ -12,8 +12,10 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
+
 class InvalidQuery(Exception):
     pass
+
 
 class InvalidGrantType(Exception):
     pass

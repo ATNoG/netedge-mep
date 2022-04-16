@@ -1,18 +1,20 @@
 from abc import ABC, abstractmethod
 
+
 class DatabaseBase(ABC):
     """
     Specification if at some point there is a decision to change to another database (this by no means totally enforces
     the structure of a database connection. It serves as a sort of guideline)
     """
+
     @abstractmethod
-    def __init__(self,ip,port):
+    def __init__(self, ip, port):
         self.ip = ip
         self.port = port
         self.client = None
 
     @abstractmethod
-    def connect(self,thread_index: int):
+    def connect(self, thread_index: int):
         """
         Connect to the database
 

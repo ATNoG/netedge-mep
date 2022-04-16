@@ -36,7 +36,7 @@ class LinkType:
     """
 
     def __init__(self, href: str):
-        self.href = validate_uri(href)
+        self.href = href
 
     def to_json(self):
         return dict(href=self.href)
@@ -77,16 +77,20 @@ class Subscription:
     Section 6.2.2
     """
 
-    def __init__(self, href: str, subscriptionType: str):
+    def __init__(
+        self,
+        href: str,
+        subscriptionType: str = "SerAvailabilityNotificationSubscription",
+    ):
         """
-        :param href: URI referring to the subscription.
-        :type href: str (String is validated to be a correct URI)
+        :param href: URI referring to the subscription. (isn't a real URI but the path to something in our MEP)
+        :type href: str
         :param subscriptionType: Type of the subscription.
         :type subscriptionType: str
 
         Raises TypeError
         """
-        self.href = validate_uri(href)
+        self.href = href
         self.subscriptionType = subscriptionType
 
     def to_json(self):
@@ -102,7 +106,7 @@ class Links:
 
     def __init__(
         self,
-        _self: LinkType,
+        _self: LinkType = None,
         subscriptions: List[Subscription] = None,
         liveness: LinkType = None,
     ):
@@ -112,9 +116,11 @@ class Links:
 
     @staticmethod
     def from_json(data: dict) -> Links:
+        validate(instance=data, schema=links_schema)
         _self = LinkType(data["self"]["href"])
         subscriptions = None
         if "subscriptions" in data and len(data["subscriptions"]) > 0:
+            cherrypy.log(json.dumps(data["subscriptions"]))
             subscriptions = [
                 Subscription(**subscription) for subscription in data["subscriptions"]
             ]
@@ -134,7 +140,8 @@ class Links:
 
 class MecServiceMgmtApiSubscriptionLinkList:
     """
-    This type represents a list of links related to currently existing subscriptions for a MEC application instance. This information is returned when sending a request to receive current subscriptions.
+    This type represents a list of links related to currently existing subscriptions for a MEC application instance.
+    This information is returned when sending a request to receive current subscriptions.
 
     Section 6.2.2 - MEC 011
     """
@@ -180,12 +187,13 @@ class CategoryRef:
         # All required none should have value none thus there is no need to use ignore_none_val
         return dict(href=self.href, id=self.id, name=self.name, version=self.version)
 
+
 class FilteringCriteria:
     def __init__(
         self,
         states: List[ServiceState],
         isLocal: bool,
-        serInstanceId: List[str] = None,
+        serInstanceIds: List[str] = None,
         serNames: List[str] = None,
         serCategories: List[CategoryRef] = None,
     ):
@@ -194,8 +202,8 @@ class FilteringCriteria:
         :type states: List[ServiceState]
         :param isLocal: Restrict event reporting to whether the service is local to the MEC platform where the subscription is managed.
         :type isLocal: Boolean
-        :param serInstanceId: Identifiers of service instances about which to report events
-        :type serInstanceId: String
+        :param serInstanceIds: Identifiers of service instances about which to report events
+        :type serInstanceIds: String
         :param serNames: Names of services about which to report events
         :type serNames: String
         :param serCategories: Categories of services about which to report events.
@@ -209,22 +217,26 @@ class FilteringCriteria:
         """
         self.states = states
         self.isLocal = isLocal
-        self.serInstanceId = serInstanceId
+        self.serInstanceIds = serInstanceIds
         self.serNames = serNames
         self.serCategories = serCategories
 
     @staticmethod
     def from_json(data: dict) -> FilteringCriteria:
-        validate(instance=data,schema=filteringcriteria_schema)
-        states = [ServiceState[state] for state in data["states"]]
-        isLocal = data["isLocal"]
+        validate(instance=data, schema=filteringcriteria_schema)
+        tmp_states = data.pop("states", None)
+        if tmp_states == None:
+            states = None
+        else:
+            states = [ServiceState[state] for state in tmp_states]
+        isLocal = data.pop("isLocal", None)
 
         # Since only one is acceptable start all as none and then set only the one presented in the data
-        # the validate from json schema deals with the mutually exclusive part
+        # the validation from json schema deals with the mutually exclusive part
         identifier_data = {
             "serCategories": None,
             "serNames": None,
-            "serInstanceId": None,
+            "serInstanceIds": None,
         }
         if "serCategories" in data:
             identifier_data["serCategories"] = [
@@ -232,8 +244,8 @@ class FilteringCriteria:
             ]
         elif "serNames" in data:
             identifier_data["serNames"] = data["serNames"]
-        elif "serInstanceId" in data:
-            identifier_data["serInstanceId"] = data["serInstanceId"]
+        elif "serInstanceIds" in data:
+            identifier_data["serInstanceIds"] = data["serInstanceId"]
 
         # The object is created from the two known variables and from the dictionary setting only one identifier data
         return FilteringCriteria(states=states, isLocal=isLocal, **identifier_data)
@@ -243,24 +255,60 @@ class FilteringCriteria:
             dict(
                 states=self.states,
                 isLocal=self.isLocal,
-                serInstanceId=self.serInstanceId,
+                serInstanceIds=self.serInstanceIds,
                 serNames=self.serNames,
                 serCategories=self.serCategories,
             )
         )
 
 
+class ServiceAvailabilityNotification:
+    def __init__(
+        self,
+        serviceReferences: List[ServiceReferences],
+        _links: Subscription,
+        notificationType: str = "SerAvailabilityNotificationSubscription",
+    ):
+        """
+
+        :param serviceReferences: List of links to services whose availability has changed.
+        :type serviceReferences: List of ServiceReferences
+        :param _links: Object containing hyperlinks related to the resource.
+        :type _links: Subscription
+        :param notificationType: hall be set to "SerAvailabilityNotification"
+        :type notificationType: String
+
+        Section 8.1.4.2
+        """
+        self.notificationType = notificationType
+        self.serviceReferences = serviceReferences
+        self._links = _links
+
+    class ServiceReferences:
+        def __init__(
+            self,
+            link: LinkType,
+            serInstanceId: str,
+            state: ServiceState,
+            changeType: ChangeType,
+        ):
+            self.link = link
+            self.serInstanceId = serInstanceId
+            self.state = state
+            self.changeType = changeType
+
+
 class SerAvailabilityNotificationSubscription:
     def __init__(
         self,
         callbackReference: str,
-        _links: Links,
+        _links: Links = None,
         filteringCriteria: FilteringCriteria = None,
         subscriptionType: str = "SetAvailabilityNotificationSubscription",
     ):
         """
 
-        :param callbackReference: Shall be set to "SerAvailabilityNotificationSubscription".
+        :param callbackReference: URI selected by the MEC application instance to receive notifications on the subscribed MEC service availability information. This shall be included in both the request and the response.".
         :type callbackReference: String
         :param _links: Object containing hyperlinks related to the resource. This shall only be included in the HTTP responses.
         :type _links: str (String is validated to be a correct URI)
@@ -282,7 +330,6 @@ class SerAvailabilityNotificationSubscription:
     def from_json(data: dict) -> SerAvailabilityNotificationSubscription:
         # validate the json via jsonschema
         validate(instance=data, schema=seravailabilitynotificationsubscription_schema)
-        _links = Links.from_json(data.pop("_links"))
         # FilteringCriteria is not a required request body parameter
         filteringCriteria = None
         if "filteringCriteria" in data:
@@ -290,7 +337,7 @@ class SerAvailabilityNotificationSubscription:
                 data.pop("filteringCriteria")
             )
         return SerAvailabilityNotificationSubscription(
-            _links=_links, filteringCriteria=filteringCriteria, **data
+            filteringCriteria=filteringCriteria, **data
         )
 
     def to_json(self):
@@ -492,8 +539,8 @@ class ServiceInfo:
         state: ServiceState,
         transportInfo: TransportInfo,
         serializer: SerializerType,
-        _links: Links,
         livenessInterval: int,
+        _links: Links = None,
         consumedLocalOnly: bool = True,
         isLocal: bool = True,
         scopeOfLocality: LocalityType = LocalityType.MEC_HOST,
@@ -562,13 +609,11 @@ class ServiceInfo:
         if "scopeOfLocality" in data.keys():
             scopeOfLocality = LocalityType(data.pop("scopeOfLocality"))
 
-        _links = Links.from_json(data.pop("_links"))
         return ServiceInfo(
             state=state,
             transportInfo=transportInfo,
             serializer=serializer,
             scopeOfLocality=scopeOfLocality,
-            _links=_links,
             **data,
             **identifier_data,
         )
@@ -610,11 +655,8 @@ class AppReadyConfirmation:
         return AppReadyConfirmation(indication=indication)
 
     def to_json(self):
-        return ignore_none_value(
-            dict(
-                indication = self.indication
-            )
-        )
+        return ignore_none_value(dict(indication=self.indication))
+
 
 # In theory this class doesn't need to exist but since ETSI defined a post request body
 # it may be useful in the future (i.e new indications etc...)
@@ -630,8 +672,4 @@ class AppTerminationConfirmation:
         return AppTerminationConfirmation(operationAction=operationAction)
 
     def to_json(self):
-        return ignore_none_value(
-            dict(
-                operationAction = self.operationAction
-            )
-        )
+        return ignore_none_value(dict(operationAction=self.operationAction))
