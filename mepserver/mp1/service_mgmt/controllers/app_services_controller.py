@@ -18,6 +18,7 @@ import cherrypy
 
 sys.path.append("../../")
 from mp1.models import *
+import uuid
 
 
 class ApplicationServicesController:
@@ -76,9 +77,23 @@ class ApplicationServicesController:
         :return: ServiceInfo or ProblemDetails
         HTTP STATUS CODE: 201, 400, 403, 404
         """
+        # TODO ADD RATE LIMITING OTHERWISE APP CAN CONTINOUSLY GENERATE NEW SERVICES
+        # TODO NEEDS TO BE RATE LIMIT SINCE AN APP CAN HAVE N SERVICES
         data = cherrypy.request.json
+        # The process of generating the class allows for "automatic" validation of the json
         serviceInfo = ServiceInfo.from_json(data)
-        return serviceInfo
+        # Add serInstanceId (uuid) to serviceInfo according to Section 8.1.2.2
+        serviceInfo.serInstanceId = str(uuid.uuid4())
+        # TODO serCategory IF NOT PRESENT NEEDS TO BE SET BY MEP (SOMEHOW TELL ME ETSI)
+        # Check if the appInstanceId has already confirmed ready status
+        if cherrypy.thread_data.db.count_documents("appStatus", dict(appInstanceId=appInstanceId)) > 0:
+            # Store new service into the database
+            cherrypy.thread_data.db.create("service",object_to_mongodb_dict(serviceInfo))
+            #TODO EXECUTE THE CALLBACK ENDPOINT FOR APPINSTANCES THAT ALREADY SUBSCRIBED SERVICES OF THIS TYPE
+            return serviceInfo
+        else:
+            # TODO PROBLEM DETAILS OUTPUT
+            pass
 
     @json_out(cls=NestedEncoder)
     def applicaton_services_get_with_service_id(
