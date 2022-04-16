@@ -13,7 +13,6 @@
 #     limitations under the License.
 
 import sys
-
 sys.path.append("../../")
 from mp1.models import *
 
@@ -24,7 +23,7 @@ class ServicesController:
     def services_get(self,ser_instance_id: List[str] = None,
                                   ser_name: List[str] = None, ser_category_id: List[str] = None,
                                   consumed_local_only: bool = False, is_local: bool = False,
-                                  scope_of_locality: str = ""):
+                                  scope_of_locality: str = None):
         """
         This method retrieves information about a list of mecService resources. This method is typically used in "service availability query" procedure
 
@@ -47,12 +46,17 @@ class ServicesController:
         :return: ServiceInfo or ProblemDetails
         HTTP STATUS CODE: 200, 400, 403, 404, 414
         """
-        # TODO VALIDATE PARAMETERS (i.e mutually exclusive) AND CREATE QUERY
-        data = json.loads(
-            '{"livenessInterval":5,"_links":{"self":{"href":"http://www.google.com"},"liveness":{"href":"http://www.google.com"}},"serCategory":{"href":"http://www.google.com","id":"string","name":"string","version":"string"},"version":"string","state":"ACTIVE","transportInfo":{"id":"string","endpoint":{"uris":["http://www.google.com"]},"name":"string","description":"string","type":"REST_HTTP","protocol":"string","version":"string","security":{"oAuth2Info":{"grantTypes":["OAUTH2_AUTHORIZATION_CODE"],"tokenEndpoint":"string"}},"implSpecificInfo":{}},"serializer":"JSON","scopeOfLocality":"MEC_SYSTEM","consumedLocalOnly":true,"isLocal":true}'
-        )
-        serviceInfo = ServiceInfo.from_json(data)
-        return serviceInfo
+        query = dict(serInstanceId=ser_instance_id,
+                     serName=ser_name,
+                     serCategory=dict(id=ser_category_id),
+                     consumedLocalOnly=consumed_local_only,
+                     isLocal=is_local,
+                     scopeOfLocality=scope_of_locality,
+                     )
+        data = cherrypy.thread_data.db.query_col("services",query)
+        # Data is a pymongo cursor we first need to convert it into a json serializable object
+        # Since this query is supposed to return various valid Services we can simply convert into a list
+        return list(data)
 
     @json_out(cls=NestedEncoder)
     def services_get_with_serviceId(self, serviceId: str):

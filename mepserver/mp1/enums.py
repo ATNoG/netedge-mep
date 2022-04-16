@@ -18,6 +18,7 @@ from enum import Enum
 class ServiceState(Enum):
     ACTIVE = "ACTIVE"
     INACTIVE = "INACTIVE"
+    SUSPENDED = "SUSPENDED"
 
 
 class SerializerType(Enum):

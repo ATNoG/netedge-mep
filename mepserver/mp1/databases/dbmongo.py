@@ -1,4 +1,5 @@
 from .database_base import DatabaseBase
+from ..utils import query_replace_none
 from pymongo import MongoClient
 import cherrypy
 import time
@@ -53,7 +54,15 @@ class MongoDb(DatabaseBase):
         :param query: query to match one or more parameters of the data to queried
         :return: document removed from database
         """
-        pass
+        # Get the collection
+        collection = self.client[col]
+        # Removes the default values None to a wildcard query match in order to properly query mongodb
+        # the wildcard is {$exists:true}
+        query = query_replace_none(query)
+        import json
+        cherrypy.log(json.dumps(query))
+        data = collection.find(query,{"_id":0})
+        return data
 
     def count_documents(self,col:str,query:dict):
         """
