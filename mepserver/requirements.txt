@@ -21,8 +21,10 @@ jaraco.collections==3.5.1
 jaraco.context==4.1.1
 jaraco.functools==3.5.0
 jaraco.text==3.7.0
+jsonschema==4.4.0
 more-itertools==8.12.0
 portend==3.1.0
+pyrsistent==0.18.1
 pytz==2021.3
 repoze.lru==0.7
 Routes==2.5.1
@@ -31,4 +33,3 @@ tempora==5.0.1
 validators==0.18.2
 zc.lockfile==2.0
 zipp==3.7.0
-jsonschema==4.4.0

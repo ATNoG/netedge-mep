@@ -14,11 +14,12 @@
 
 import sys
 
-sys.path.append('../../')
+sys.path.append("../../")
 from mp1.models import *
 
-class ServicesController:
 
+class ServicesController:
+    @url_query_validator(cls=ServicesQueryValidator)
     @json_out(cls=NestedEncoder)
     def services_get(self,ser_instance_id: List[str] = None,
                                   ser_name: List[str] = None, ser_category_id: List[str] = None,
@@ -48,7 +49,8 @@ class ServicesController:
         """
         # TODO VALIDATE PARAMETERS (i.e mutually exclusive) AND CREATE QUERY
         data = json.loads(
-            "{\"livenessInterval\":5,\"_links\":{\"self\":{\"href\":\"http://www.google.com\"},\"liveness\":{\"href\":\"http://www.google.com\"}},\"serCategory\":{\"href\":\"http://www.google.com\",\"id\":\"string\",\"name\":\"string\",\"version\":\"string\"},\"version\":\"string\",\"state\":\"ACTIVE\",\"transportInfo\":{\"id\":\"string\",\"endpoint\":{\"uris\":[\"http://www.google.com\"]},\"name\":\"string\",\"description\":\"string\",\"type\":\"REST_HTTP\",\"protocol\":\"string\",\"version\":\"string\",\"security\":{\"oAuth2Info\":{\"grantTypes\":[\"OAUTH2_AUTHORIZATION_CODE\"],\"tokenEndpoint\":\"string\"}},\"implSpecificInfo\":{}},\"serializer\":\"JSON\",\"scopeOfLocality\":\"MEC_SYSTEM\",\"consumedLocalOnly\":true,\"isLocal\":true}")
+            '{"livenessInterval":5,"_links":{"self":{"href":"http://www.google.com"},"liveness":{"href":"http://www.google.com"}},"serCategory":{"href":"http://www.google.com","id":"string","name":"string","version":"string"},"version":"string","state":"ACTIVE","transportInfo":{"id":"string","endpoint":{"uris":["http://www.google.com"]},"name":"string","description":"string","type":"REST_HTTP","protocol":"string","version":"string","security":{"oAuth2Info":{"grantTypes":["OAUTH2_AUTHORIZATION_CODE"],"tokenEndpoint":"string"}},"implSpecificInfo":{}},"serializer":"JSON","scopeOfLocality":"MEC_SYSTEM","consumedLocalOnly":true,"isLocal":true}'
+        )
         serviceInfo = ServiceInfo.from_json(data)
         return serviceInfo
 
@@ -64,6 +66,7 @@ class ServicesController:
         """
         # TODO VALIDATE PARAMETERS (i.e mutually exclusive) AND CREATE QUERY
         data = json.loads(
-            "{\"serName\":\"working\",\"livenessInterval\":5,\"_links\":{\"self\":{\"href\":\"http://www.google.com\"},\"liveness\":{\"href\":\"http://www.google.com\"}},\"version\":\"string\",\"state\":\"ACTIVE\",\"transportInfo\":{\"id\":\"string\",\"endpoint\":{\"uris\":[\"http://www.google.com\"]},\"name\":\"string\",\"description\":\"string\",\"type\":\"REST_HTTP\",\"protocol\":\"string\",\"version\":\"string\",\"security\":{\"oAuth2Info\":{\"grantTypes\":[\"OAUTH2_AUTHORIZATION_CODE\"],\"tokenEndpoint\":\"string\"}},\"implSpecificInfo\":{}},\"serializer\":\"JSON\",\"scopeOfLocality\":\"MEC_SYSTEM\",\"consumedLocalOnly\":true,\"isLocal\":true}")
+            '{"serName":"working","livenessInterval":5,"_links":{"self":{"href":"http://www.google.com"},"liveness":{"href":"http://www.google.com"}},"version":"string","state":"ACTIVE","transportInfo":{"id":"string","endpoint":{"uris":["http://www.google.com"]},"name":"string","description":"string","type":"REST_HTTP","protocol":"string","version":"string","security":{"oAuth2Info":{"grantTypes":["OAUTH2_AUTHORIZATION_CODE"],"tokenEndpoint":"string"}},"implSpecificInfo":{}},"serializer":"JSON","scopeOfLocality":"MEC_SYSTEM","consumedLocalOnly":true,"isLocal":true}'
+        )
         serviceInfo = ServiceInfo.from_json(data)
         return serviceInfo
