@@ -134,7 +134,7 @@ class UrlQueryValidator(ABC):
     @abstractmethod
     def validate(**kwargs):
         """
-        function that validates the arguments passed in an urlquery according to mec 011
+        function that validates the arguments passed in an urlquery according to Mec 011
         """
         pass
 
