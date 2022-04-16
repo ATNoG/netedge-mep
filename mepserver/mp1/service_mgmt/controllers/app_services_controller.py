@@ -20,6 +20,7 @@ sys.path.append("../../")
 from mp1.models import *
 import uuid
 
+
 class ApplicationServicesController:
 
     @url_query_validator(cls=ServicesQueryValidator)

@@ -303,6 +303,7 @@ class SerAvailabilityNotificationSubscription:
             )
         )
 
+
 class OAuth2Info:
     def __init__(self, grantTypes: List[GrantTypes], tokenEndpoint: str):
         """
