@@ -24,6 +24,7 @@ from typing import List
 from bson import SON
 from abc import ABC, abstractmethod
 
+
 def validate_uri(href: str) -> str:
     valid_href = validators.url(href)
     if isinstance(valid_href, ValidationFailure):
@@ -61,7 +62,8 @@ def ignore_none_value(data: dict) -> dict:
     """
     return {key: val for key, val in data.items() if val is not None}
 
-def mongodb_query_replace(query:dict)->dict:
+
+def mongodb_query_replace(query: dict) -> dict:
     """
     Replaces the None values (i.e default values) of Url Query Parameters to wildcard mongodb query
     This allows for easy and queries in the mongodb database
@@ -74,20 +76,21 @@ def mongodb_query_replace(query:dict)->dict:
     validating each and every type of class
     """
     new_query = {}
-    for key,value in query.items():
+    for key, value in query.items():
         if isinstance(value, dict):
             new_dict = mongodb_query_replace(value)
             # example: {"serCategory:{"id":"uuid"}}
             # query must be find({"serCategory.id":"uuid"})
-            for new_key,value in new_dict.items():
+            for new_key, value in new_dict.items():
                 new_query[f"{key}.{new_key}"] = value
-        elif isinstance(value,list):
-            new_query[key] = {"$in":value}
+        elif isinstance(value, list):
+            new_query[key] = {"$in": value}
         elif value is None:
-            new_query[key] = {'$regex': '.*', '$options': 's'}
+            new_query[key] = {"$regex": ".*", "$options": "s"}
         else:
             new_query[key] = value
     return new_query
+
 
 # Decorator that receives a CLS to encode the json
 def json_out(cls):
@@ -96,8 +99,11 @@ def json_out(cls):
             object_to_be_serialized = func(*args, **kwargs)
             cherrypy.response.headers["Content-Type"] = "application/json"
             return json.dumps(object_to_be_serialized, cls=cls).encode("utf-8")
+
         return inner
+
     return json_out_wrapper
+
 
 class NestedEncoder(JSONEncoder):
     def default(self, obj):
@@ -110,8 +116,8 @@ class NestedEncoder(JSONEncoder):
         else:
             return json.JSONEncoder.default(self, obj)
 
-class UrlQueryValidator(ABC):
 
+class UrlQueryValidator(ABC):
     @staticmethod
     @abstractmethod
     def get_required_fields():
@@ -132,8 +138,8 @@ class UrlQueryValidator(ABC):
         """
         pass
 
-class ServicesQueryValidator(UrlQueryValidator):
 
+class ServicesQueryValidator(UrlQueryValidator):
     @staticmethod
     def validate(**kwargs):
         """
@@ -146,7 +152,7 @@ class ServicesQueryValidator(UrlQueryValidator):
         scope_of_locality: str
         """
         # Used for scope_of_locality and is_local to transform the url query data to actual python values
-        bool_converter = {"true":True,"false":False,None:None}
+        bool_converter = {"true": True, "false": False, None: None}
 
         ser_category_id = kwargs.get("ser_category_id")
         ser_instance_id = kwargs.get("ser_instance_id")
@@ -154,15 +160,23 @@ class ServicesQueryValidator(UrlQueryValidator):
         # If 2 are none means only one is set and thus the mutual exclusive attribute is valid so we can move on
         # with the validation
         # If there are 3 it means there wasn't any query parameter
-        mutual_exclusive = {"ser_category_id": ser_category_id, "ser_instance_id": ser_instance_id, "ser_name": ser_name}
+        mutual_exclusive = {
+            "ser_category_id": ser_category_id,
+            "ser_instance_id": ser_instance_id,
+            "ser_name": ser_name,
+        }
         if list(mutual_exclusive.values()).count(None) > 2:
             # Get the parameter that isn't None
-            mutually_exclusive_param = [key for key in mutual_exclusive if mutual_exclusive[key] is not None]
+            mutually_exclusive_param = [
+                key for key in mutual_exclusive if mutual_exclusive[key] is not None
+            ]
             # If no parameter is None it means there wasn't any mutually exclusive parameter thus no need to split
-            if len(mutually_exclusive_param)>0:
+            if len(mutually_exclusive_param) > 0:
 
                 # Parameter is a List of string so we want to split it in order to query in the next phase
-                kwargs[mutually_exclusive_param[0]] = kwargs[mutually_exclusive_param[0]].split(",")
+                kwargs[mutually_exclusive_param[0]] = kwargs[
+                    mutually_exclusive_param[0]
+                ].split(",")
             # Validate the rest of the parameters against their supposed values
             consumed_local_only = kwargs.get("consumed_local_only")
             is_local = kwargs.get("is_local")
@@ -171,31 +185,37 @@ class ServicesQueryValidator(UrlQueryValidator):
                 kwargs["consumed_local_only"] = bool_converter[consumed_local_only]
                 if is_local == "true" or "false" or None:
                     kwargs["is_local"] = bool_converter[is_local]
-                    if (scope_of_locality is not None and not scope_of_locality.isdigit()) or scope_of_locality is None:
+                    if (
+                        scope_of_locality is not None
+                        and not scope_of_locality.isdigit()
+                    ) or scope_of_locality is None:
                         return kwargs
         raise InvalidQuery
-
 
     @staticmethod
     def get_required_fields():
         pass
 
+
 def url_query_validator(cls):
     def inner_wrapper(func):
-        def inner(*args,**kwargs):
+        def inner(*args, **kwargs):
             # Args is the class (self arg)
             # Kwargs are the actual function arguments that come after the self
 
             # Check if the cls is a subclass of the abstract class QueryValidator
             # This forces any new interface using the query_validator
-            if issubclass(cls,UrlQueryValidator):
+            if issubclass(cls, UrlQueryValidator):
                 new_kwargs = cls.validate(**kwargs)
                 return func(*args, **new_kwargs)
             raise TypeError
+
         return inner
+
     return inner_wrapper
 
-def object_to_mongodb_dict(obj, extra: dict = None)->dict:
+
+def object_to_mongodb_dict(obj, extra: dict = None) -> dict:
     """
     :param obj: Data to be transformed from python class to json
     :type obj: Python Class

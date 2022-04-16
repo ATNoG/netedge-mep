@@ -77,7 +77,11 @@ class Subscription:
     Section 6.2.2
     """
 
-    def __init__(self, href: str, subscriptionType: str = "SerAvailabilityNotificationSubscription"):
+    def __init__(
+        self,
+        href: str,
+        subscriptionType: str = "SerAvailabilityNotificationSubscription",
+    ):
         """
         :param href: URI referring to the subscription. (isn't a real URI but the path to something in our MEP)
         :type href: str
@@ -112,7 +116,7 @@ class Links:
 
     @staticmethod
     def from_json(data: dict) -> Links:
-        validate(instance=data,schema=links_schema)
+        validate(instance=data, schema=links_schema)
         _self = LinkType(data["self"]["href"])
         subscriptions = None
         if "subscriptions" in data and len(data["subscriptions"]) > 0:
@@ -183,6 +187,7 @@ class CategoryRef:
         # All required none should have value none thus there is no need to use ignore_none_val
         return dict(href=self.href, id=self.id, name=self.name, version=self.version)
 
+
 class FilteringCriteria:
     def __init__(
         self,
@@ -218,13 +223,13 @@ class FilteringCriteria:
 
     @staticmethod
     def from_json(data: dict) -> FilteringCriteria:
-        validate(instance=data,schema=filteringcriteria_schema)
-        tmp_states = data.pop("states",None)
+        validate(instance=data, schema=filteringcriteria_schema)
+        tmp_states = data.pop("states", None)
         if tmp_states == None:
             states = None
         else:
             states = [ServiceState[state] for state in tmp_states]
-        isLocal = data.pop("isLocal",None)
+        isLocal = data.pop("isLocal", None)
 
         # Since only one is acceptable start all as none and then set only the one presented in the data
         # the validation from json schema deals with the mutually exclusive part
@@ -252,12 +257,18 @@ class FilteringCriteria:
                 isLocal=self.isLocal,
                 serInstanceIds=self.serInstanceIds,
                 serNames=self.serNames,
-                serCategories=self.serCategories
+                serCategories=self.serCategories,
             )
         )
 
+
 class ServiceAvailabilityNotification:
-    def __init__(self,serviceReferences: List[ServiceReferences], _links: Subscription, notificationType: str = "SerAvailabilityNotificationSubscription",):
+    def __init__(
+        self,
+        serviceReferences: List[ServiceReferences],
+        _links: Subscription,
+        notificationType: str = "SerAvailabilityNotificationSubscription",
+    ):
         """
 
         :param serviceReferences: List of links to services whose availability has changed.
@@ -274,7 +285,13 @@ class ServiceAvailabilityNotification:
         self._links = _links
 
     class ServiceReferences:
-        def __init__(self, link: LinkType, serInstanceId: str, state: ServiceState, changeType: ChangeType):
+        def __init__(
+            self,
+            link: LinkType,
+            serInstanceId: str,
+            state: ServiceState,
+            changeType: ChangeType,
+        ):
             self.link = link
             self.serInstanceId = serInstanceId
             self.state = state
@@ -319,7 +336,9 @@ class SerAvailabilityNotificationSubscription:
             filteringCriteria = FilteringCriteria.from_json(
                 data.pop("filteringCriteria")
             )
-        return SerAvailabilityNotificationSubscription(filteringCriteria=filteringCriteria, **data)
+        return SerAvailabilityNotificationSubscription(
+            filteringCriteria=filteringCriteria, **data
+        )
 
     def to_json(self):
         return ignore_none_value(
@@ -330,6 +349,7 @@ class SerAvailabilityNotificationSubscription:
                 subscriptionType=self.subscriptionType,
             )
         )
+
 
 class OAuth2Info:
     def __init__(self, grantTypes: List[GrantTypes], tokenEndpoint: str):
@@ -635,11 +655,8 @@ class AppReadyConfirmation:
         return AppReadyConfirmation(indication=indication)
 
     def to_json(self):
-        return ignore_none_value(
-            dict(
-                indication = self.indication
-            )
-        )
+        return ignore_none_value(dict(indication=self.indication))
+
 
 # In theory this class doesn't need to exist but since ETSI defined a post request body
 # it may be useful in the future (i.e new indications etc...)
@@ -655,8 +672,4 @@ class AppTerminationConfirmation:
         return AppTerminationConfirmation(operationAction=operationAction)
 
     def to_json(self):
-        return ignore_none_value(
-            dict(
-                operationAction = self.operationAction
-            )
-        )
+        return ignore_none_value(dict(operationAction=self.operationAction))

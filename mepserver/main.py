@@ -12,8 +12,12 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from mp1.service_mgmt.controllers.app_subscriptions_controller import ApplicationSubscriptionsController
-from mp1.service_mgmt.controllers.app_services_controller import ApplicationServicesController
+from mp1.service_mgmt.controllers.app_subscriptions_controller import (
+    ApplicationSubscriptionsController,
+)
+from mp1.service_mgmt.controllers.app_services_controller import (
+    ApplicationServicesController,
+)
 from mp1.service_mgmt.controllers.services_controller import ServicesController
 from mp1.service_mgmt.controllers.transports_controller import TransportsController
 
@@ -172,7 +176,6 @@ def main(database: Type[DatabaseBase]):
         conditions=dict(method=["GET"]),
     )
 
-
     supp_conf = {"/": {"request.dispatch": support_dispatcher}}
     cherrypy.tree.mount(None, "/mec_app_support/v1", config=supp_conf)
     mgmt_conf = {"/": {"request.dispatch": mgmt_dispatcher}}
@@ -181,14 +184,14 @@ def main(database: Type[DatabaseBase]):
     ######################################
     # Database Connection to all threads #
     ######################################
-    if isinstance(database,DatabaseBase):
-        cherrypy.engine.subscribe('start_thread',database.connect)
+    if isinstance(database, DatabaseBase):
+        cherrypy.engine.subscribe("start_thread", database.connect)
         cherrypy.engine.start()
     else:
         cherrypy.log("Invalid database provided to MEP. Shutting down.")
 
 
 if __name__ == "__main__":
-    #TODO should be loaded form config file
-    #TODO same as therest of the dispatcher
-    main(MongoDb("localhost",27017,"mep"))
+    # TODO should be loaded form config file
+    # TODO same as therest of the dispatcher
+    main(MongoDb("localhost", 27017, "mep"))

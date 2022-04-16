@@ -20,14 +20,20 @@ sys.path.append("../../")
 from mp1.models import *
 import uuid
 
-class ApplicationServicesController:
 
+class ApplicationServicesController:
     @url_query_validator(cls=ServicesQueryValidator)
     @json_out(cls=NestedEncoder)
-    def applications_services_get(self, appInstanceId: str, ser_instance_id: List[str] = None,
-                                  ser_name: List[str] = None, ser_category_id: List[str] = None,
-                                  consumed_local_only: bool = False, is_local: bool = False,
-                                  scope_of_locality: str = ""):
+    def applications_services_get(
+        self,
+        appInstanceId: str,
+        ser_instance_id: List[str] = None,
+        ser_name: List[str] = None,
+        ser_category_id: List[str] = None,
+        consumed_local_only: bool = False,
+        is_local: bool = False,
+        scope_of_locality: str = "",
+    ):
         """
         This method retrieves information about a list of mecService resources. This method is typically used in "service availability query" procedure
 
@@ -83,15 +89,28 @@ class ApplicationServicesController:
         # serInstaceId is used as serviceId appServices
         serviceInfo.serInstanceId = str(uuid.uuid4())
         # Add _links data to serviceInfo
-        server_self_referencing_uri = cherrypy.url(qs=cherrypy.request.query_string, relative='server')
-        _links = Links(liveness=LinkType(f"{server_self_referencing_uri}/{serviceInfo.serInstanceId}/liveness"))
+        server_self_referencing_uri = cherrypy.url(
+            qs=cherrypy.request.query_string, relative="server"
+        )
+        _links = Links(
+            liveness=LinkType(
+                f"{server_self_referencing_uri}/{serviceInfo.serInstanceId}/liveness"
+            )
+        )
         serviceInfo._links = _links
         # TODO serCategory IF NOT PRESENT NEEDS TO BE SET BY MEP (SOMEHOW TELL ME ETSI)
         # Check if the appInstanceId has already confirmed ready status
-        if cherrypy.thread_data.db.count_documents("appStatus", dict(appInstanceId=appInstanceId)) > 0:
+        if (
+            cherrypy.thread_data.db.count_documents(
+                "appStatus", dict(appInstanceId=appInstanceId)
+            )
+            > 0
+        ):
             # Store new service into the database
-            cherrypy.thread_data.db.create("services",object_to_mongodb_dict(serviceInfo))
-            #TODO EXECUTE THE CALLBACK ENDPOINT FOR APPINSTANCES THAT ALREADY SUBSCRIBED SERVICES OF THIS TYPE
+            cherrypy.thread_data.db.create(
+                "services", object_to_mongodb_dict(serviceInfo)
+            )
+            # TODO EXECUTE THE CALLBACK ENDPOINT FOR APPINSTANCES THAT ALREADY SUBSCRIBED SERVICES OF THIS TYPE
             return serviceInfo
         else:
             # TODO PROBLEM DETAILS OUTPUT

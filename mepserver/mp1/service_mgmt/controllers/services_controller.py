@@ -13,6 +13,7 @@
 #     limitations under the License.
 
 import sys
+
 sys.path.append("../../")
 from mp1.models import *
 
@@ -20,10 +21,15 @@ from mp1.models import *
 class ServicesController:
     @url_query_validator(cls=ServicesQueryValidator)
     @json_out(cls=NestedEncoder)
-    def services_get(self,ser_instance_id: List[str] = None,
-                                  ser_name: List[str] = None, ser_category_id: List[str] = None,
-                                  consumed_local_only: bool = False, is_local: bool = False,
-                                  scope_of_locality: str = None):
+    def services_get(
+        self,
+        ser_instance_id: List[str] = None,
+        ser_name: List[str] = None,
+        ser_category_id: List[str] = None,
+        consumed_local_only: bool = False,
+        is_local: bool = False,
+        scope_of_locality: str = None,
+    ):
         """
         This method retrieves information about a list of mecService resources. This method is typically used in "service availability query" procedure
 
@@ -46,14 +52,15 @@ class ServicesController:
         :return: ServiceInfo or ProblemDetails
         HTTP STATUS CODE: 200, 400, 403, 404, 414
         """
-        query = dict(serInstanceId=ser_instance_id,
-                     serName=ser_name,
-                     serCategory=dict(id=ser_category_id),
-                     consumedLocalOnly=consumed_local_only,
-                     isLocal=is_local,
-                     scopeOfLocality=scope_of_locality,
-                     )
-        data = cherrypy.thread_data.db.query_col("services",query)
+        query = dict(
+            serInstanceId=ser_instance_id,
+            serName=ser_name,
+            serCategory=dict(id=ser_category_id),
+            consumedLocalOnly=consumed_local_only,
+            isLocal=is_local,
+            scopeOfLocality=scope_of_locality,
+        )
+        data = cherrypy.thread_data.db.query_col("services", query)
         # Data is a pymongo cursor we first need to convert it into a json serializable object
         # Since this query is supposed to return various valid Services we can simply convert into a list
         return list(data)
