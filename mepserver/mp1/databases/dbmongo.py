@@ -58,10 +58,9 @@ class MongoDb(DatabaseBase):
         :type fields: dict
         :return: document removed from database
         """
-        # Get the collection
         if fields is None:
             fields = {}
-
+        # Get the collection
         collection = self.client[col]
         # Verify if query is a string or  dict/object
         if isinstance(query,str):

@@ -21,12 +21,13 @@ class ApplicationConfirmationController:
         # TODO PROPER PROBLEM DETAILS
         # Create AppReadyConfirmation from json to validate the input
         appConfirmReady = AppReadyConfirmation.from_json(cherrypy.request.json)
+        cherrypy.log(appConfirmReady.indication.name)
         if appConfirmReady.indication == IndicationType.READY:
             # Before attempting to insert data into the collection check if the app hasn't already registered itself
             if cherrypy.thread_data.db.count_documents("appStatus",dict(appInstanceId=appInstanceId))>0:
                 # TODO CAN'T STORE BECAUSE APPINSTANCE ID ALREADY EXISTS
-                pass
-            # Create a dict to be saved th
+                return
+            # Create a dict to be saved in the database
             appStatusDict = dict(appInstanceId=appInstanceId,**appConfirmReady.to_json())
             # Indication is still and object and not the value
             # We could use the json_out internal function but it is overkill for this instance

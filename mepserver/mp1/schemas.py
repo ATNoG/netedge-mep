@@ -97,7 +97,7 @@ seravailabilitynotificationsubscription_schema = {
         "subscriptionType": {"type": "string"},
     },
     "additionalProperties": False,
-    "required": ["callbackReference", "subscriptionType"],
+    "required": ["callbackReference"],
 }
 oauth2info_schema = {
     "type": "object",

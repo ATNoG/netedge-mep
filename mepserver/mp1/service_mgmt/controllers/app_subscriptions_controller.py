@@ -74,25 +74,36 @@ class ApplicationSubscriptionsController:
         """
         #TODO validate that appinstanceid exists
         data = cherrypy.request.json
-        # The process of generating the class allows for "automatic" validation of the json and for filtering after saving to the database
+        # The process of generating the class allows for "automatic" validation of the json and
+        # for filtering after saving to the database
         availability_notification = SerAvailabilityNotificationSubscription.from_json(data)
         # Add subscriptionId required for the Subscriptions Method specified in Section 8.2.9.2
+        # TODO subscriptionID generation should be inside the class
         subscriptionId = str(uuid.uuid4())
+        # Add appInstanceId for internal usage
         cherrypy.thread_data.db.create("subscriptions", object_to_mongodb_dict(availability_notification,
                                         extra=dict(appInstanceId=appInstanceId,subscriptionId=subscriptionId)))
 
-        # After generating the subscription we need to, according to the users filtering criteria, get the services that match
-        # the filtering criteria.
+        # After generating the subscription we need to, according to the users filtering criteria,
+        # get the services that match the filtering criteria.
         # Afterwards, execute a callback in order for the client to know which services are up and running
 
         # Obtain the notification filtering criteria
-        query = availability_notification.filteringCriteria.to_json()
+        query = availability_notification.filteringCriteria.to_query()
         # Query the database for services that are already registered and that match the filtering criteria
-        data = cherrypy.thread_data.db.query_col("services", query,fields=dict(_links=0))
-        # Data is a pymongo cursor we first need to convert it into a json serializable object
-        # Since this query is supposed to return various valid Services we can simply convert into a list prior to encoding
-        # Attempt to execute the callback
-        CallbackController.execute_callback(availability_notification=availability_notification,data=data)
+        data = cherrypy.thread_data.db.query_col("services", query)
+        # Transform cursor into a list
+        data = list(data)
+        # From the existing services that match the subscription criteria generate the notifications
+        # According to Section 8.1.4.2-1 of MEC 011 _links contains hyperlinks to the related subscription
+        if len(data)>0:
+            subscription = f"/applications/{appInstanceId}/subscriptions/{subscriptionId}"
+            serviceNotification = ServiceAvailabilityNotification.from_json_service_list(data=data,subscription=subscription,changeType="ADDED")
+            # Execute the callback with the data to be sent
+            # default sleep_time is 10 due to the fact that the subscriber hasn't receive his request response
+            # stating that he will receive subscription notifications
+            CallbackController.execute_callback(availability_notifications=availability_notification,
+                                                data=serviceNotification)
 
         # Return the data that was sent via the post message with added _links that references to current subscriptionId
         server_self_referencing_uri = cherrypy.url(qs=cherrypy.request.query_string, relative='server')

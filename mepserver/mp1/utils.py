@@ -51,7 +51,7 @@ def pick_identifier(data: dict, possible_identifiers: List[str]) -> str:
 
 def ignore_none_value(data: dict) -> dict:
     """
-    Removes keys that have None value from the dictionary
+    Removes keys that have None or empty dict value from the dictionary
 
     :param data: Dictionary containing data to be returned
     :type data: dict
@@ -79,7 +79,15 @@ def mongodb_query_replace(query:dict)->dict:
             # example: {"serCategory:{"id":"uuid"}}
             # query must be find({"serCategory.id":"uuid"})
             for new_key,value in new_dict.items():
-                new_query[f"{key}.{new_key}"] = value
+                # Exists is an operator that is used inside a new dict but shouldn't be appended
+                if new_key == "$exists":
+                    new_query[key] = {new_key:value}
+                else:
+                    new_query[f"{key}.{new_key}"] = value
+        # the operator $or and $and use a list as value that shouldn't be transformed into the $in operator
+        # Maintain the list property but re-check the inner json
+        elif key=="$or" or key=="$and":
+            new_query[key] = [mongodb_query_replace(val) for val in value]
         elif isinstance(value,list):
             new_query[key] = {"$in":value}
         elif value is None:
