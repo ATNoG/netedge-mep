@@ -5,7 +5,8 @@
 replicaCount: 1
 
 image:
-  repository: docker.io/motamiguel/mepserver
+  # this should be from the ATNOG/netedge-mep repository
+  repository: ghcr.io/oescal/mepserver:latest
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
