@@ -13,7 +13,7 @@
 #     limitations under the License.
 
 from __future__ import annotations
-from typing import List
+from typing import List, Union
 from jsonschema import validate
 import cherrypy
 
@@ -80,7 +80,7 @@ class Subscription:
     def __init__(
         self,
         href: str,
-        subscriptionType: str = "SerAvailabilityNotificationSubscription",
+        subscriptionType: Union[str, None] = "SerAvailabilityNotificationSubscription",
     ):
         """
         :param href: URI referring to the subscription. (isn't a real URI but the path to something in our MEP)
@@ -94,7 +94,9 @@ class Subscription:
         self.subscriptionType = subscriptionType
 
     def to_json(self):
-        return dict(href=self.href, subscriptionType=self.subscriptionType)
+        return ignore_none_value(
+            dict(href=self.href, subscriptionType=self.subscriptionType)
+        )
 
 
 class Links:
@@ -261,6 +263,22 @@ class FilteringCriteria:
             )
         )
 
+    def to_query(self):
+        """
+        Different from to_json because it uses singular names instead of plural ones
+        This is due to the fact that the filtering criteria is made with plural names while
+        services in the database stores things in singular
+        """
+        return ignore_none_value(
+            dict(
+                state=self.states,
+                isLocal=self.isLocal,
+                serInstanceId=self.serInstanceIds,
+                serName=self.serNames,
+                serCategorie=self.serCategories,
+            )
+        )
+
 
 class ServiceAvailabilityNotification:
     def __init__(
@@ -274,6 +292,7 @@ class ServiceAvailabilityNotification:
         :param serviceReferences: List of links to services whose availability has changed.
         :type serviceReferences: List of ServiceReferences
         :param _links: Object containing hyperlinks related to the resource.
+                        Can be None (Temporarly) in the case of a new service where the data is added during callback
         :type _links: Subscription
         :param notificationType: hall be set to "SerAvailabilityNotification"
         :type notificationType: String
@@ -290,12 +309,82 @@ class ServiceAvailabilityNotification:
             link: LinkType,
             serInstanceId: str,
             state: ServiceState,
+            serName: str,
             changeType: ChangeType,
         ):
             self.link = link
             self.serInstanceId = serInstanceId
+            self.serName = serName
             self.state = state
             self.changeType = changeType
+
+        @staticmethod
+        def from_json(data: dict):
+            """
+            :param data: Data used to generate a ServiceReference
+            :type data: JSON / Python Dict
+            :return: ServiceReference
+            """
+            # Link is weird - ETSI overall structure for the _link type is really confusing
+            link = LinkType(data.get("_links").get("liveness").get("href"))
+            serInstanceId = data.get("serInstanceId")
+            state = data.get("state")
+            serName = data.get("serName")
+            changeType = ChangeType(data.get("changeType"))
+            return ServiceAvailabilityNotification.ServiceReferences(
+                link=link,
+                serInstanceId=serInstanceId,
+                state=state,
+                serName=serName,
+                changeType=changeType,
+            )
+
+        def to_json(self):
+            return dict(
+                link=self.link,
+                serInstanceId=self.serInstanceId,
+                serName=self.serName,
+                state=self.state,
+                changeType=self.changeType,
+            )
+
+    @staticmethod
+    def from_json_service_list(
+        data: list[dict], changeType: str, subscription: str = None
+    ):
+        """
+        :param data: List containing all services (in json form) that match the filtering criteria
+        :type data: JSON / Python dictionary
+        :param subscription: URL referencing the subscription resource
+        :type subscription: String
+        :param changeType: Type of the change being sent to the subscriber
+        :type changeType: ChangeType
+        :return: ServiceAvailabilityNotification
+        """
+        if subscription:
+            _links = Subscription(href=subscription, subscriptionType=None)
+        else:
+            _links = None
+        serviceReferences = []
+
+        for service in data:
+            service["changeType"] = changeType
+            tmpReference = ServiceAvailabilityNotification.ServiceReferences.from_json(
+                data=service
+            )
+            serviceReferences.append(tmpReference)
+        return ServiceAvailabilityNotification(
+            _links=_links, serviceReferences=serviceReferences
+        )
+
+    def to_json(self):
+        return ignore_none_value(
+            dict(
+                notificationType=self.notificationType,
+                _links=self._links,
+                serviceReferences=self.serviceReferences,
+            )
+        )
 
 
 class SerAvailabilityNotificationSubscription:
@@ -304,7 +393,6 @@ class SerAvailabilityNotificationSubscription:
         callbackReference: str,
         _links: Links = None,
         filteringCriteria: FilteringCriteria = None,
-        subscriptionType: str = "SetAvailabilityNotificationSubscription",
     ):
         """
 
@@ -314,8 +402,6 @@ class SerAvailabilityNotificationSubscription:
         :type _links: str (String is validated to be a correct URI)
         :param filteringCriteria: Filtering criteria to match services for which events are requested to be reported. If absent, matches all services. All child attributes are combined with the logical "AND" operation.
         :type filteringCriteria: FilteringCriteria
-        :param subscriptionType: Shall be set to "SerAvailabilityNotificationSubscription".
-        :type subscriptionType: str
 
         Raises TypeError
 
@@ -324,14 +410,21 @@ class SerAvailabilityNotificationSubscription:
         self.callbackReference = validate_uri(callbackReference)
         self._links = _links
         self.filteringCriteria = filteringCriteria
-        self.subscriptionType = subscriptionType
+        self.subscriptionType = "SerAvailabilityNotificationSubscription"
+        """
+        AppInstanceId and subscriptionId are only used internally to deal with callbacks
+        """
+        self.appInstanceId = None
+        self.subscriptionId = None
 
     @staticmethod
     def from_json(data: dict) -> SerAvailabilityNotificationSubscription:
         # validate the json via jsonschema
         validate(instance=data, schema=seravailabilitynotificationsubscription_schema)
         # FilteringCriteria is not a required request body parameter
-        filteringCriteria = None
+        # Using {} instead of None is due to the fact that if nothing is passed it is supposed to match everything
+        # this makes it easier to query this edge case in the database
+        filteringCriteria = {}
         if "filteringCriteria" in data:
             filteringCriteria = FilteringCriteria.from_json(
                 data.pop("filteringCriteria")
@@ -635,6 +728,37 @@ class ServiceInfo:
                 isLocal=self.isLocal,
             )
         )
+
+    def to_filtering_criteria_json(self):
+        """
+        Used with the $or mongodb operator which requires a list of dictionaries for each "or" operation
+        Example we want to get an object that can have serName="a" or serInstanceId="b"
+        {$or:[{"serName":a},{"serInstanceId":"b"}]}
+
+        Due to serInstancesIds,serNames,serCategories and states being addressable by various values we transform
+        them into a list so that we can use the $in operator
+        """
+        tmp_ret = ignore_none_value(
+            dict(
+                serInstanceIds=[self.serInstanceId],
+                serNames=[self.serName],
+                serCategories=[self.serCategory],
+                states=[self.state],
+                isLocal=self.isLocal,
+            )
+        )
+
+        return {
+            "$and": [
+                {
+                    "$or": [
+                        {f"filteringCriteria.{key}": {"$exists": False}},
+                        {f"filteringCriteria.{key}": val},
+                    ]
+                }
+                for key, val in list(tmp_ret.items())
+            ]
+        }
 
 
 ####################################

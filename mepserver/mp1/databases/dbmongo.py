@@ -61,10 +61,9 @@ class MongoDb(DatabaseBase):
         :type fields: dict
         :return: document removed from database
         """
-        # Get the collection
         if fields is None:
             fields = {}
-
+        # Get the collection
         collection = self.client[col]
         # Verify if query is a string or  dict/object
         if isinstance(query, str):
@@ -77,6 +76,7 @@ class MongoDb(DatabaseBase):
         # the wildcard is {$exists:true}
         # Adds $in operator if the query contains a list
         query = mongodb_query_replace(query)
+        cherrypy.log(json.dumps(query))
         # Query the collection according to query and obtain the fields specified in fields
         if find_one:
             data = collection.find_one(query, {"_id": 0} | fields)

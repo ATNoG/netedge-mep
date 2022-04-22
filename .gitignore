@@ -209,3 +209,6 @@ dist/**
 
 # Tests directory
 internal-tests/
+
+#Remove charts
+*.tgz

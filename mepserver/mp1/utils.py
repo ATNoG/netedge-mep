@@ -12,7 +12,6 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-import enum
 from json import JSONEncoder
 import json
 from enum import Enum
@@ -21,7 +20,7 @@ import cherrypy
 import validators
 from validators import ValidationFailure
 from typing import List
-from bson import SON
+import argparse
 from abc import ABC, abstractmethod
 
 
@@ -53,7 +52,7 @@ def pick_identifier(data: dict, possible_identifiers: List[str]) -> str:
 
 def ignore_none_value(data: dict) -> dict:
     """
-    Removes keys that have None value from the dictionary
+    Removes keys that have None or empty dict value from the dictionary
 
     :param data: Dictionary containing data to be returned
     :type data: dict
@@ -73,7 +72,7 @@ def mongodb_query_replace(query: dict) -> dict:
 
     Yes, this may seem overkill if we think in terms of mongodb, but since this is used by various types of queries,
     where we don't actually know if the value is going to be None or not it's easier to parse it like this instead of
-    validating each and every type of class
+    validating each and every type of class and then only sending the ones needed to the query
     """
     new_query = {}
     for key, value in query.items():
@@ -82,7 +81,15 @@ def mongodb_query_replace(query: dict) -> dict:
             # example: {"serCategory:{"id":"uuid"}}
             # query must be find({"serCategory.id":"uuid"})
             for new_key, value in new_dict.items():
-                new_query[f"{key}.{new_key}"] = value
+                # Exists is an operator that is used inside a new dict but shouldn't be appended
+                if new_key == "$exists":
+                    new_query[key] = {new_key: value}
+                else:
+                    new_query[f"{key}.{new_key}"] = value
+        # the operator $or and $and use a list as value that shouldn't be transformed into the $in operator
+        # Maintain the list property but re-check the inner json
+        elif key == "$or" or key == "$and":
+            new_query[key] = [mongodb_query_replace(val) for val in value]
         elif isinstance(value, list):
             new_query[key] = {"$in": value}
         elif value is None:
@@ -152,7 +159,8 @@ class ServicesQueryValidator(UrlQueryValidator):
         scope_of_locality: str
         """
         # Used for scope_of_locality and is_local to transform the url query data to actual python values
-        bool_converter = {"true": True, "false": False, None: None}
+        # if there is no value for the query we will query for both of the possible boolean values
+        bool_converter = {"true": True, "false": False, None: [True, False]}
 
         ser_category_id = kwargs.get("ser_category_id")
         ser_instance_id = kwargs.get("ser_instance_id")
@@ -165,14 +173,13 @@ class ServicesQueryValidator(UrlQueryValidator):
             "ser_instance_id": ser_instance_id,
             "ser_name": ser_name,
         }
-        if list(mutual_exclusive.values()).count(None) > 2:
+        if list(mutual_exclusive.values()).count(None) >= 2:
             # Get the parameter that isn't None
             mutually_exclusive_param = [
                 key for key in mutual_exclusive if mutual_exclusive[key] is not None
             ]
             # If no parameter is None it means there wasn't any mutually exclusive parameter thus no need to split
             if len(mutually_exclusive_param) > 0:
-
                 # Parameter is a List of string so we want to split it in order to query in the next phase
                 kwargs[mutually_exclusive_param[0]] = kwargs[
                     mutually_exclusive_param[0]
@@ -239,3 +246,19 @@ def object_to_mongodb_dict(obj, extra: dict = None) -> dict:
     if extra is not None:
         return_data = return_data | extra
     return return_data
+
+
+def check_port(port, base=1024):
+    """
+    Check if an int port number is valid
+    Valid is bigger than base port number
+
+    :param port: Port number
+    :type port: integer
+    :param base: Base port number (i.e lower limit)
+    :type base: integer
+    """
+    value = int(port)
+    if value <= base:
+        raise argparse.ArgumentTypeError("%s is an invalid positive int value" % value)
+    return value

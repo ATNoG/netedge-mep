@@ -19,6 +19,7 @@ import cherrypy
 sys.path.append("../../")
 from mp1.models import *
 import uuid
+from .callbacks_controller import CallbackController
 
 
 class ApplicationServicesController:
@@ -32,7 +33,7 @@ class ApplicationServicesController:
         ser_category_id: List[str] = None,
         consumed_local_only: bool = False,
         is_local: bool = False,
-        scope_of_locality: str = "",
+        scope_of_locality: str = None,
     ):
         """
         This method retrieves information about a list of mecService resources. This method is typically used in "service availability query" procedure
@@ -63,7 +64,7 @@ class ApplicationServicesController:
         """
         # TODO VALIDATE PARAMETERS (i.e mutually exclusive) AND CREATE QUERY
         data = json.loads(
-            '{"livenessInterval":5,"serName":"ola","_links":{"self":{"href":"http://www.google.com"},"liveness":{"href":"http://www.google.com"}},"serCategory":{"href":"http://www.google.com","id":"string","name":"string","version":"string"},"version":"string","state":"ACTIVE","transportInfo":{"id":"string","endpoint":{"uris":["http://www.google.com"]},"name":"string","description":"string","type":"REST_HTTP","protocol":"string","version":"string","security":{"oAuth2Info":{"grantTypes":["OAUTH2_AUTHORIZATION_CODE","OAUTH2_RESOURCE_OWNER"],"tokenEndpoint":"string"}},"implSpecificInfo":{}},"serializer":"JSON","scopeOfLocality":"MEC_SYSTEM","consumedLocalOnly":true,"isLocal":true}'
+            '{"livenessInterval":5,"serName":"ola","serCategory":{"href":"http://www.google.com","id":"string","name":"string","version":"string"},"version":"string","state":"ACTIVE","transportInfo":{"id":"string","endpoint":{"uris":["http://www.google.com"]},"name":"string","description":"string","type":"REST_HTTP","protocol":"string","version":"string","security":{"oAuth2Info":{"grantTypes":["OAUTH2_AUTHORIZATION_CODE","OAUTH2_RESOURCE_OWNER"],"tokenEndpoint":"string"}},"implSpecificInfo":{}},"serializer":"JSON","scopeOfLocality":"MEC_SYSTEM","consumedLocalOnly":true,"isLocal":true}'
         )
         serviceInfo = ServiceInfo.from_json(data)
         return serviceInfo
@@ -110,7 +111,44 @@ class ApplicationServicesController:
             cherrypy.thread_data.db.create(
                 "services", object_to_mongodb_dict(serviceInfo)
             )
-            # TODO EXECUTE THE CALLBACK ENDPOINT FOR APPINSTANCES THAT ALREADY SUBSCRIBED SERVICES OF THIS TYPE
+            # Obtain all the Subscriptions that match the newly added service
+            # Generate query that allows for all possible criteria using the $and and $or mongo operators
+            query = serviceInfo.to_filtering_criteria_json()
+            cherrypy.log(json.dumps(query, cls=NestedEncoder))
+            subscriptions = cherrypy.thread_data.db.query_col("subscriptions", query)
+            subscriptions = list(subscriptions)
+            # Before creating the object transform the serviceInfo into a json list since it is
+            # expecting a list of services in json
+            # We don't use the original data because it is missing parameters that are introduced internally
+            serviceInfoData = [json.loads(json.dumps(serviceInfo, cls=NestedEncoder))]
+            serviceNotification = (
+                ServiceAvailabilityNotification.from_json_service_list(
+                    data=serviceInfoData, changeType="ADDED"
+                )
+            )
+            # If some subscriptions matches with the newly added service we need to notify them of this change
+            if len(subscriptions) > 0:
+                availability_notifications = []
+                # Transform each subscription into a ServiceNotificationSubscription class for easier usage
+                for subscription in list(subscriptions):
+                    appInstanceId = subscription.pop("appInstanceId")
+                    subscriptionId = subscription.pop("subscriptionId")
+                    # Remove subscriptionType from subscription due to the fact that SerAvailabilityNotificationSubscription
+                    # Is created usually from user input and we don't want him to control that parameter
+                    subscription.pop("subscriptionType")
+                    availability_notification = (
+                        SerAvailabilityNotificationSubscription.from_json(subscription)
+                    )
+                    availability_notification.appInstanceId = appInstanceId
+                    availability_notification.subscriptionId = subscriptionId
+                    availability_notifications.append(availability_notification)
+                # Call the callback with the list of SerAvailabilityNotificationSubscriptions
+                # Use a sleep_time of 0 (the subscriber is already up and waiting for subscriptions)
+                CallbackController.execute_callback(
+                    availability_notifications=availability_notifications,
+                    data=serviceNotification,
+                    sleep_time=0,
+                )
             return serviceInfo
         else:
             # TODO PROBLEM DETAILS OUTPUT
