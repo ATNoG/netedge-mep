@@ -18,6 +18,7 @@ import time
 import requests
 import cherrypy
 import uuid
+
 sys.path.append("../../")
 from mp1.models import *
 from .callbacks_controller import CallbackController
@@ -37,22 +38,30 @@ class ApplicationSubscriptionsController:
         """
         # Obtain the subscriptionIds that match the appInstanceId
         # TODO validate the authorization to get the subscriptions of the appinstanceid (i.e if this person can query for this appinstanceid)
-        subscriptionIds = cherrypy.thread_data.db.query_col("subscriptions",
-                                                          query=dict(appInstanceId=appInstanceId),
-                                                          fields=dict(subscriptionId=1))
+        subscriptionIds = cherrypy.thread_data.db.query_col(
+            "subscriptions",
+            query=dict(appInstanceId=appInstanceId),
+            fields=dict(subscriptionId=1),
+        )
 
         # Generate dict and then validate via the already existing models
         # Takes all subscriptions created by appInstanceId and generates a list of subscriptions
-        subscriptionlinklist = {"_links":
-                                    {"self":
-                                         {"href":cherrypy.url(qs = cherrypy.request.query_string, relative = "server")},
-                                     "subscriptions": []
-                                    }
-                                }
+        subscriptionlinklist = {
+            "_links": {
+                "self": {
+                    "href": cherrypy.url(
+                        qs=cherrypy.request.query_string, relative="server"
+                    )
+                },
+                "subscriptions": [],
+            }
+        }
 
         # Iterate the cursor and add to the linklist
         for subId in subscriptionIds:
-            serverSelfReferencingUri = cherrypy.url(qs=cherrypy.request.query_string, relative='server')
+            serverSelfReferencingUri = cherrypy.url(
+                qs=cherrypy.request.query_string, relative="server"
+            )
             href = {"href": f"{serverSelfReferencingUri}/{subId['subscriptionId']}"}
             subscriptionlinklist["_links"]["subscriptions"].append(href)
 
@@ -72,17 +81,24 @@ class ApplicationSubscriptionsController:
         :return: SerAvailabilityNotificationSubscription or ProblemDetails
         HTTP STATUS CODE: 201, 400, 403, 404
         """
-        #TODO validate that appinstanceid exists
+        # TODO validate that appinstanceid exists
         data = cherrypy.request.json
         # The process of generating the class allows for "automatic" validation of the json and
         # for filtering after saving to the database
-        availability_notification = SerAvailabilityNotificationSubscription.from_json(data)
+        availability_notification = SerAvailabilityNotificationSubscription.from_json(
+            data
+        )
         # Add subscriptionId required for the Subscriptions Method specified in Section 8.2.9.2
         # TODO subscriptionID generation should be inside the class
         subscriptionId = str(uuid.uuid4())
         # Add appInstanceId for internal usage
-        cherrypy.thread_data.db.create("subscriptions", object_to_mongodb_dict(availability_notification,
-                                        extra=dict(appInstanceId=appInstanceId,subscriptionId=subscriptionId)))
+        cherrypy.thread_data.db.create(
+            "subscriptions",
+            object_to_mongodb_dict(
+                availability_notification,
+                extra=dict(appInstanceId=appInstanceId, subscriptionId=subscriptionId),
+            ),
+        )
 
         # After generating the subscription we need to, according to the users filtering criteria,
         # get the services that match the filtering criteria.
@@ -96,18 +112,30 @@ class ApplicationSubscriptionsController:
         data = list(data)
         # From the existing services that match the subscription criteria generate the notifications
         # According to Section 8.1.4.2-1 of MEC 011 _links contains hyperlinks to the related subscription
-        if len(data)>0:
-            subscription = f"/applications/{appInstanceId}/subscriptions/{subscriptionId}"
-            serviceNotification = ServiceAvailabilityNotification.from_json_service_list(data=data,subscription=subscription,changeType="ADDED")
+        if len(data) > 0:
+            subscription = (
+                f"/applications/{appInstanceId}/subscriptions/{subscriptionId}"
+            )
+            serviceNotification = (
+                ServiceAvailabilityNotification.from_json_service_list(
+                    data=data, subscription=subscription, changeType="ADDED"
+                )
+            )
             # Execute the callback with the data to be sent
             # default sleep_time is 10 due to the fact that the subscriber hasn't receive his request response
             # stating that he will receive subscription notifications
-            CallbackController.execute_callback(availability_notifications=availability_notification,
-                                                data=serviceNotification)
+            CallbackController.execute_callback(
+                availability_notifications=availability_notification,
+                data=serviceNotification,
+            )
 
         # Return the data that was sent via the post message with added _links that references to current subscriptionId
-        server_self_referencing_uri = cherrypy.url(qs=cherrypy.request.query_string, relative='server')
-        _links = Links(_self=LinkType(f"{server_self_referencing_uri}/{subscriptionId}"))
+        server_self_referencing_uri = cherrypy.url(
+            qs=cherrypy.request.query_string, relative="server"
+        )
+        _links = Links(
+            _self=LinkType(f"{server_self_referencing_uri}/{subscriptionId}")
+        )
         availability_notification._links = _links
         return availability_notification
 
@@ -129,23 +157,28 @@ class ApplicationSubscriptionsController:
         # Obtain the subscriptionIds that match the appInstanceId and subscriptionId
         # TODO validate the authorization to get the subscriptions of the appinstanceid (i.e if this person can query for this appinstanceid)
         # Only one result is expected so use find_one to limit the database search and decrease response time
-        subscription = cherrypy.thread_data.db.query_col("subscriptions",
-                                                            query=dict(appInstanceId=appInstanceId,
-                                                                       subscriptionId=subscriptionId),
-                                                            fields=dict(subscriptionId=0),
-                                                            find_one=True)
-
+        subscription = cherrypy.thread_data.db.query_col(
+            "subscriptions",
+            query=dict(appInstanceId=appInstanceId, subscriptionId=subscriptionId),
+            fields=dict(subscriptionId=0),
+            find_one=True,
+        )
 
         # In the database we also save the appInstanceId but it isn't supposed to be returned or used to create the object
-        subscription.pop("appInstanceId",None)
-        availability_notification = SerAvailabilityNotificationSubscription.from_json(subscription)
+        subscription.pop("appInstanceId", None)
+        availability_notification = SerAvailabilityNotificationSubscription.from_json(
+            subscription
+        )
         # Add _links to class before sending
-        server_self_referencing_uri = cherrypy.url(qs=cherrypy.request.query_string, relative='server')
-        _links = Links(_self=LinkType(f"{server_self_referencing_uri}/{subscriptionId}"))
+        server_self_referencing_uri = cherrypy.url(
+            qs=cherrypy.request.query_string, relative="server"
+        )
+        _links = Links(
+            _self=LinkType(f"{server_self_referencing_uri}/{subscriptionId}")
+        )
         availability_notification._links = _links
 
         return availability_notification
-
 
     @json_out(cls=NestedEncoder)
     def applications_subscriptions_delete(

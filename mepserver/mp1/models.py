@@ -13,7 +13,7 @@
 #     limitations under the License.
 
 from __future__ import annotations
-from typing import List,Union
+from typing import List, Union
 from jsonschema import validate
 import cherrypy
 
@@ -77,7 +77,11 @@ class Subscription:
     Section 6.2.2
     """
 
-    def __init__(self, href: str, subscriptionType: Union[str,None] = "SerAvailabilityNotificationSubscription"):
+    def __init__(
+        self,
+        href: str,
+        subscriptionType: Union[str, None] = "SerAvailabilityNotificationSubscription",
+    ):
         """
         :param href: URI referring to the subscription. (isn't a real URI but the path to something in our MEP)
         :type href: str
@@ -90,7 +94,9 @@ class Subscription:
         self.subscriptionType = subscriptionType
 
     def to_json(self):
-        return ignore_none_value(dict(href=self.href, subscriptionType=self.subscriptionType))
+        return ignore_none_value(
+            dict(href=self.href, subscriptionType=self.subscriptionType)
+        )
 
 
 class Links:
@@ -112,7 +118,7 @@ class Links:
 
     @staticmethod
     def from_json(data: dict) -> Links:
-        validate(instance=data,schema=links_schema)
+        validate(instance=data, schema=links_schema)
         _self = LinkType(data["self"]["href"])
         subscriptions = None
         if "subscriptions" in data and len(data["subscriptions"]) > 0:
@@ -183,6 +189,7 @@ class CategoryRef:
         # All required none should have value none thus there is no need to use ignore_none_val
         return dict(href=self.href, id=self.id, name=self.name, version=self.version)
 
+
 class FilteringCriteria:
     def __init__(
         self,
@@ -218,13 +225,13 @@ class FilteringCriteria:
 
     @staticmethod
     def from_json(data: dict) -> FilteringCriteria:
-        validate(instance=data,schema=filteringcriteria_schema)
-        tmp_states = data.pop("states",None)
+        validate(instance=data, schema=filteringcriteria_schema)
+        tmp_states = data.pop("states", None)
         if tmp_states == None:
             states = None
         else:
             states = [ServiceState[state] for state in tmp_states]
-        isLocal = data.pop("isLocal",None)
+        isLocal = data.pop("isLocal", None)
 
         # Since only one is acceptable start all as none and then set only the one presented in the data
         # the validation from json schema deals with the mutually exclusive part
@@ -252,7 +259,7 @@ class FilteringCriteria:
                 isLocal=self.isLocal,
                 serInstanceIds=self.serInstanceIds,
                 serNames=self.serNames,
-                serCategories=self.serCategories
+                serCategories=self.serCategories,
             )
         )
 
@@ -268,12 +275,18 @@ class FilteringCriteria:
                 isLocal=self.isLocal,
                 serInstanceId=self.serInstanceIds,
                 serName=self.serNames,
-                serCategorie=self.serCategories
+                serCategorie=self.serCategories,
             )
         )
 
+
 class ServiceAvailabilityNotification:
-    def __init__(self,serviceReferences: List[ServiceReferences], _links: Subscription, notificationType: str = "SerAvailabilityNotificationSubscription",):
+    def __init__(
+        self,
+        serviceReferences: List[ServiceReferences],
+        _links: Subscription,
+        notificationType: str = "SerAvailabilityNotificationSubscription",
+    ):
         """
 
         :param serviceReferences: List of links to services whose availability has changed.
@@ -291,7 +304,14 @@ class ServiceAvailabilityNotification:
         self._links = _links
 
     class ServiceReferences:
-        def __init__(self, link: LinkType, serInstanceId: str, state: ServiceState, serName: str, changeType: ChangeType):
+        def __init__(
+            self,
+            link: LinkType,
+            serInstanceId: str,
+            state: ServiceState,
+            serName: str,
+            changeType: ChangeType,
+        ):
             self.link = link
             self.serInstanceId = serInstanceId
             self.serName = serName
@@ -299,7 +319,7 @@ class ServiceAvailabilityNotification:
             self.changeType = changeType
 
         @staticmethod
-        def from_json(data:dict):
+        def from_json(data: dict):
             """
             :param data: Data used to generate a ServiceReference
             :type data: JSON / Python Dict
@@ -311,21 +331,27 @@ class ServiceAvailabilityNotification:
             state = data.get("state")
             serName = data.get("serName")
             changeType = ChangeType(data.get("changeType"))
-            return ServiceAvailabilityNotification.ServiceReferences(link=link,
-                                                                     serInstanceId=serInstanceId,
-                                                                     state=state,
-                                                                     serName=serName,
-                                                                     changeType=changeType)
+            return ServiceAvailabilityNotification.ServiceReferences(
+                link=link,
+                serInstanceId=serInstanceId,
+                state=state,
+                serName=serName,
+                changeType=changeType,
+            )
 
         def to_json(self):
-            return dict(link=self.link,
-                        serInstanceId=self.serInstanceId,
-                        serName=self.serName,
-                        state=self.state,
-                        changeType=self.changeType)
+            return dict(
+                link=self.link,
+                serInstanceId=self.serInstanceId,
+                serName=self.serName,
+                state=self.state,
+                changeType=self.changeType,
+            )
 
     @staticmethod
-    def from_json_service_list(data: list[dict], changeType: str, subscription: str=None):
+    def from_json_service_list(
+        data: list[dict], changeType: str, subscription: str = None
+    ):
         """
         :param data: List containing all services (in json form) that match the filtering criteria
         :type data: JSON / Python dictionary
@@ -336,28 +362,37 @@ class ServiceAvailabilityNotification:
         :return: ServiceAvailabilityNotification
         """
         if subscription:
-            _links = Subscription(href=subscription,subscriptionType=None)
+            _links = Subscription(href=subscription, subscriptionType=None)
         else:
             _links = None
         serviceReferences = []
 
         for service in data:
             service["changeType"] = changeType
-            tmpReference = ServiceAvailabilityNotification.ServiceReferences.from_json(data=service)
+            tmpReference = ServiceAvailabilityNotification.ServiceReferences.from_json(
+                data=service
+            )
             serviceReferences.append(tmpReference)
-        return ServiceAvailabilityNotification(_links=_links,serviceReferences=serviceReferences)
+        return ServiceAvailabilityNotification(
+            _links=_links, serviceReferences=serviceReferences
+        )
 
     def to_json(self):
-        return ignore_none_value(dict(notificationType=self.notificationType,
-                    _links=self._links,
-                    serviceReferences=self.serviceReferences))
+        return ignore_none_value(
+            dict(
+                notificationType=self.notificationType,
+                _links=self._links,
+                serviceReferences=self.serviceReferences,
+            )
+        )
+
 
 class SerAvailabilityNotificationSubscription:
     def __init__(
         self,
         callbackReference: str,
         _links: Links = None,
-        filteringCriteria: FilteringCriteria = None
+        filteringCriteria: FilteringCriteria = None,
     ):
         """
 
@@ -394,7 +429,9 @@ class SerAvailabilityNotificationSubscription:
             filteringCriteria = FilteringCriteria.from_json(
                 data.pop("filteringCriteria")
             )
-        return SerAvailabilityNotificationSubscription(filteringCriteria=filteringCriteria, **data)
+        return SerAvailabilityNotificationSubscription(
+            filteringCriteria=filteringCriteria, **data
+        )
 
     def to_json(self):
         return ignore_none_value(
@@ -405,6 +442,7 @@ class SerAvailabilityNotificationSubscription:
                 subscriptionType=self.subscriptionType,
             )
         )
+
 
 class OAuth2Info:
     def __init__(self, grantTypes: List[GrantTypes], tokenEndpoint: str):
@@ -710,7 +748,18 @@ class ServiceInfo:
             )
         )
 
-        return {"$and":[{"$or":[{f"filteringCriteria.{key}":{"$exists":False}},{f"filteringCriteria.{key}":val}]} for key,val in list(tmp_ret.items())]}
+        return {
+            "$and": [
+                {
+                    "$or": [
+                        {f"filteringCriteria.{key}": {"$exists": False}},
+                        {f"filteringCriteria.{key}": val},
+                    ]
+                }
+                for key, val in list(tmp_ret.items())
+            ]
+        }
+
 
 ####################################
 # Classes used by support api      #
@@ -730,11 +779,8 @@ class AppReadyConfirmation:
         return AppReadyConfirmation(indication=indication)
 
     def to_json(self):
-        return ignore_none_value(
-            dict(
-                indication = self.indication
-            )
-        )
+        return ignore_none_value(dict(indication=self.indication))
+
 
 # In theory this class doesn't need to exist but since ETSI defined a post request body
 # it may be useful in the future (i.e new indications etc...)
@@ -750,8 +796,4 @@ class AppTerminationConfirmation:
         return AppTerminationConfirmation(operationAction=operationAction)
 
     def to_json(self):
-        return ignore_none_value(
-            dict(
-                operationAction = self.operationAction
-            )
-        )
+        return ignore_none_value(dict(operationAction=self.operationAction))

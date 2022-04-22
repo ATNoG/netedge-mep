@@ -18,10 +18,17 @@ import time
 from typing import Union
 from cherrypy.process.plugins import BackgroundTask
 
+
 class CallbackController:
     @staticmethod
-    def execute_callback(availability_notifications: Union[List[SerAvailabilityNotificationSubscription],SerAvailabilityNotificationSubscription],
-                         data: dict, sleep_time: int = 10):
+    def execute_callback(
+        availability_notifications: Union[
+            List[SerAvailabilityNotificationSubscription],
+            SerAvailabilityNotificationSubscription,
+        ],
+        data: dict,
+        sleep_time: int = 10,
+    ):
         """
         Send the callback to the specified url (i.e callbackreference)
         Start a cherrypy BackgroundTask https://docs.cherrypy.dev/en/latest/pkg/cherrypy.process.plugins.html
@@ -34,16 +41,26 @@ class CallbackController:
         """
         if availability_notifications:
             callback_task = BackgroundTask(
-                interval=0, function=CallbackController._callback_function, args=[availability_notifications,data,sleep_time],
-                bus=cherrypy.engine)
+                interval=0,
+                function=CallbackController._callback_function,
+                args=[availability_notifications, data, sleep_time],
+                bus=cherrypy.engine,
+            )
             # Add the callback_task to itself to allow to cancel itself
             # (needed since BackgroundTask is usually repeatable)
-            callback_task.args.insert(0,callback_task)
+            callback_task.args.insert(0, callback_task)
             callback_task.start()
 
     @staticmethod
-    def _callback_function(task, availability_notifications: Union[List[SerAvailabilityNotificationSubscription], SerAvailabilityNotificationSubscription],
-                           data: dict, sleep_time: int):
+    def _callback_function(
+        task,
+        availability_notifications: Union[
+            List[SerAvailabilityNotificationSubscription],
+            SerAvailabilityNotificationSubscription,
+        ],
+        data: dict,
+        sleep_time: int,
+    ):
         """
         :param task: Reference to the background task itself
         :type task: BackgroundTask
@@ -71,11 +88,19 @@ class CallbackController:
                 # this data is storage in the SerAvailabilityNotificationSubscription object
                 appInstanceId = callbackUrl.appInstanceId
                 subscriptionId = callbackUrl.subscriptionId
-                data._links = Subscription(href=f"/applications/{appInstanceId}/subscriptions/{subscriptionId}")
-                requests.post(callbackUrl.callbackReference,
-                              data=json.dumps(data,cls=NestedEncoder), headers={'Content-Type': 'application/json'})
+                data._links = Subscription(
+                    href=f"/applications/{appInstanceId}/subscriptions/{subscriptionId}"
+                )
+                requests.post(
+                    callbackUrl.callbackReference,
+                    data=json.dumps(data, cls=NestedEncoder),
+                    headers={"Content-Type": "application/json"},
+                )
         # Instance 2
         else:
-            requests.post(availability_notifications.callbackReference,
-                          data=json.dumps(data,cls=NestedEncoder), headers={'Content-Type': 'application/json'})
+            requests.post(
+                availability_notifications.callbackReference,
+                data=json.dumps(data, cls=NestedEncoder),
+                headers={"Content-Type": "application/json"},
+            )
         task.cancel()
