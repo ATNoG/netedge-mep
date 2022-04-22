@@ -111,9 +111,6 @@ class ApplicationServicesController:
                 for subscription in list(subscriptions):
                     appInstanceId = subscription.pop("appInstanceId")
                     subscriptionId = subscription.pop("subscriptionId")
-                    # Remove subscriptionType from subscription due to the fact that SerAvailabilityNotificationSubscription
-                    # Is created usually from user input and we don't want him to control that parameter
-                    subscription.pop("subscriptionType")
                     availability_notification = SerAvailabilityNotificationSubscription.from_json(subscription)
                     availability_notification.appInstanceId = appInstanceId
                     availability_notification.subscriptionId = subscriptionId
@@ -122,6 +119,11 @@ class ApplicationServicesController:
                 # Use a sleep_time of 0 (the subscriber is already up and waiting for subscriptions)
                 CallbackController.execute_callback(availability_notifications=availability_notifications,
                                                     data=serviceNotification,sleep_time=0)
+
+            # According to Table 8.2.6.3.4-2
+            # TODO ASK ETSI WHATS THE DIFFERENCE BETWEEN _LINK AND THIS LOCATION HEADER BECAUSE BOTH SEEM TO POINT TO SAME THING
+            cherrypy.response.headers["Location"] = _links.liveness.href
+
             return serviceInfo
         else:
             # TODO PROBLEM DETAILS OUTPUT

@@ -94,10 +94,10 @@ seravailabilitynotificationsubscription_schema = {
     "properties": {
         "callbackReference": {"type": "string"},
         "filteringCriteria": filteringcriteria_schema,
-        "subscriptionType": {"type": "string"},
+        "subscriptionType": {"type": "string","enum":["SerAvailabilityNotificationSubscription"]},
     },
     "additionalProperties": False,
-    "required": ["callbackReference"],
+    "required": ["callbackReference","subscriptionType"],
 }
 oauth2info_schema = {
     "type": "object",
@@ -197,6 +197,7 @@ serviceinfo_schema = {
     "properties": {
         "version": {"type": "string"},
         "transportInfo": transportinfo_schema,
+        "transportId": {"type":"string"},
         "serializer": {"enum": ["JSON", "XML", "PROTOBUF3"]},
         "livenessInterval": {"type": "integer"},
         "consumedLocalOnly": {"type": "boolean"},
@@ -215,6 +216,14 @@ serviceinfo_schema = {
         "serName": {"type": "string"},
         "serCategory": categoryref_schema,
     },
+    "oneOf":[{"not": {"anyOf":[
+                            {"required":["transportInfo",
+                                         "transportId",
+                                        ]
+                            },
+                            ]}},
+            {"required":["transportInfo","transportId"]},
+            ],
     "required": ["version", "state", "serializer","serName"],
     "additionalProperties": False
 }

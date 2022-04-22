@@ -357,7 +357,8 @@ class SerAvailabilityNotificationSubscription:
         self,
         callbackReference: str,
         _links: Links = None,
-        filteringCriteria: FilteringCriteria = None
+        filteringCriteria: FilteringCriteria = None,
+        subscriptionType = "SerAvailabilityNotificationSubscription"
     ):
         """
 
@@ -375,7 +376,7 @@ class SerAvailabilityNotificationSubscription:
         self.callbackReference = validate_uri(callbackReference)
         self._links = _links
         self.filteringCriteria = filteringCriteria
-        self.subscriptionType = "SerAvailabilityNotificationSubscription"
+        self.subscriptionType = subscriptionType
         """
         AppInstanceId and subscriptionId are only used internally to deal with callbacks
         """
@@ -594,16 +595,19 @@ class ServiceInfo:
         state: ServiceState,
         transportInfo: TransportInfo,
         serializer: SerializerType,
-        livenessInterval: int,
+        livenessInterval: int = None,
         _links: Links = None,
         consumedLocalOnly: bool = True,
         isLocal: bool = True,
         scopeOfLocality: LocalityType = LocalityType.MEC_HOST,
+        transportId: str = None,
         serInstanceId: str = None,
         serName: str = None,
         serCategory: str = None,
     ):
         """
+        :param tranposrtId: Identifier of the platform-provided transport to be used by the service
+        :type transportId: String
         :param serInstanceId: Identifiers of service instances about which to report events
         :type serInstanceId: String
         :param serName: Names of services about which to report events.
@@ -644,6 +648,7 @@ class ServiceInfo:
         self.isLocal = isLocal
         self._links = _links
         self.livenessInterval = livenessInterval
+        self.transportId = transportId
 
     @staticmethod
     def from_json(data: dict) -> ServiceInfo:

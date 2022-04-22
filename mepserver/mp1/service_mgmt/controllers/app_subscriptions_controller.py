@@ -96,8 +96,8 @@ class ApplicationSubscriptionsController:
         data = list(data)
         # From the existing services that match the subscription criteria generate the notifications
         # According to Section 8.1.4.2-1 of MEC 011 _links contains hyperlinks to the related subscription
+        subscription = f"/applications/{appInstanceId}/subscriptions/{subscriptionId}"
         if len(data)>0:
-            subscription = f"/applications/{appInstanceId}/subscriptions/{subscriptionId}"
             serviceNotification = ServiceAvailabilityNotification.from_json_service_list(data=data,subscription=subscription,changeType="ADDED")
             # Execute the callback with the data to be sent
             # default sleep_time is 10 due to the fact that the subscriber hasn't receive his request response
@@ -109,6 +109,9 @@ class ApplicationSubscriptionsController:
         server_self_referencing_uri = cherrypy.url(qs=cherrypy.request.query_string, relative='server')
         _links = Links(_self=LinkType(f"{server_self_referencing_uri}/{subscriptionId}"))
         availability_notification._links = _links
+        # According to Table 8.2.8.3.4-2 we need to add the location to header
+        # TODO ASK ETSI WHATS THE DIFFERENCE BETWEEN _LINK AND THIS LOCATION HEADER BECAUSE BOTH SEEM TO POINT TO SAME THING
+        cherrypy.response.headers["Location"] = subscription
         return availability_notification
 
     @json_out(cls=NestedEncoder)
