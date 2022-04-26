@@ -238,7 +238,7 @@ def object_to_mongodb_dict(obj, extra: dict = None) -> dict:
     For this process we use our existing NestedEncoder that properly generates a json string and then load said string,
     allowing us to have a validated python dictionary that is a 1 to 1 representation of the underlying class
 
-    Usage needs to thought since we can be overwriting or inserting improper data
+    Usage needs to be thorough since we can be overwriting or inserting improper data
     """
 
     # Append the extra dict to the data before sending it to mongodb
