@@ -15,8 +15,6 @@
 from __future__ import annotations
 from typing import List,Union
 from jsonschema import validate
-import cherrypy
-
 from .utils import *
 from .enums import *
 from .mep_exceptions import *
@@ -43,7 +41,7 @@ class LinkType:
 
 
 class ProblemDetails:
-    def __init__(self, type: str, title: str, status: int, detail: str, instance: str):
+    def __init__(self, type: str = None, title: str = None, status: int = None, detail: str = None, instance: str = None):
         """
         :param type: A URI reference according to IETF RFC 3986 that identifies the problem type
         :param title: A short, human-readable summary of the problem type
@@ -58,13 +56,16 @@ class ProblemDetails:
         self.instance = instance
 
     def to_json(self):
-        return dict(
+        return ignore_none_value(
+            dict(
             type=self.type,
             title=self.title,
             status=self.status,
             detail=self.detail,
             instance=self.instance,
+            )
         )
+
 
 
 ####################################
@@ -218,6 +219,7 @@ class FilteringCriteria:
 
     @staticmethod
     def from_json(data: dict) -> FilteringCriteria:
+        cherrypy.log("json data ",json.dumps(data))
         validate(instance=data,schema=filteringcriteria_schema)
         tmp_states = data.pop("states",None)
         if tmp_states == None:
@@ -268,7 +270,7 @@ class FilteringCriteria:
                 isLocal=self.isLocal,
                 serInstanceId=self.serInstanceIds,
                 serName=self.serNames,
-                serCategorie=self.serCategories
+                serCategory=self.serCategories
             )
         )
 
@@ -663,12 +665,13 @@ class ServiceInfo:
         # Each required element or element that can't be automatically generated from the unpacking is popped
         # to avoid having the function received the element twice and throwing an exception
         state = ServiceState(data.pop("state"))
-        transportInfo = TransportInfo.from_json(data.pop("transportInfo"))
+        transportInfo = data.pop("transportInfo",None)
+        if transportInfo is not None:
+            transportInfo = TransportInfo.from_json()
         serializer = SerializerType(data.pop("serializer"))
         scopeOfLocality = None
         if "scopeOfLocality" in data.keys():
             scopeOfLocality = LocalityType(data.pop("scopeOfLocality"))
-
         return ServiceInfo(
             state=state,
             transportInfo=transportInfo,
@@ -693,6 +696,7 @@ class ServiceInfo:
                 livenessInterval=self.livenessInterval,
                 consumedLocalOnly=self.consumedLocalOnly,
                 isLocal=self.isLocal,
+                transportId=self.transportId
             )
         )
 

@@ -11,7 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
+import functools
 from json import JSONEncoder
 import json
 from enum import Enum
@@ -99,6 +99,7 @@ def mongodb_query_replace(query:dict)->dict:
 # Decorator that receives a CLS to encode the json
 def json_out(cls):
     def json_out_wrapper(func):
+        @functools.wraps(func)
         def inner(*args, **kwargs):
             object_to_be_serialized = func(*args, **kwargs)
             cherrypy.response.headers["Content-Type"] = "application/json"

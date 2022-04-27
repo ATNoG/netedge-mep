@@ -5,10 +5,13 @@ import cherrypy
 sys.path.append("../../")
 from mp1.models import *
 from mp1.enums import IndicationType
+from mp1.exception_handling import *
 
 class ApplicationConfirmationController:
 
     @cherrypy.tools.json_in()
+    @json_out(cls=NestedEncoder)
+    @exception_handling(default_status=204)
     def application_confirm_ready(self, appInstanceId: str):
         """
         This method may be used by the MEC application instance to notify the MEC platform that it is up and running.
@@ -34,7 +37,6 @@ class ApplicationConfirmationController:
             appStatusDict["indication"] = appStatusDict["indication"].name
             cherrypy.thread_data.db.create("appStatus",appStatusDict)
             # Set header to 204 - No Content
-            cherrypy.response.status = 204
             return None
 
     @cherrypy.tools.json_in()

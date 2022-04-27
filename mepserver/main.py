@@ -28,6 +28,7 @@ from typing import Type
 import cherrypy
 import argparse
 from mp1.utils import check_port
+from mp1.exception_handling import http_404_handling,exception_handling
 
 def main(database: Type[DatabaseBase]):
 
@@ -178,6 +179,8 @@ def main(database: Type[DatabaseBase]):
     cherrypy.tree.mount(None, "/mec_app_support/v1", config=supp_conf)
     mgmt_conf = {"/": {"request.dispatch": mgmt_dispatcher}}
     cherrypy.tree.mount(None, "/mec_service_mgmt/v1", config=mgmt_conf)
+    # Config for default 404 error handling
+    cherrypy.config.update({'error_page.404': http_404_handling})
 
     ######################################
     # Database Connection to all threads #
@@ -191,7 +194,7 @@ def main(database: Type[DatabaseBase]):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Multi-Access Edge Computing Platform')
-
+    # TODO CHANGE TO ENV_VAR FOR K8S USAGE
     parser.add_argument('--mongodb_addr', help='MongoDB Address', default="127.0.0.1")
     parser.add_argument('--mongodb_port', type=check_port, help='MongoDB port', default=27017)
     parser.add_argument('--mongodb_database', help="Database inside MongoDB", default="mep")

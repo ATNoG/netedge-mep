@@ -77,7 +77,7 @@ filteringcriteria_schema = {
         "serInstanceIds": {"type":"array","items":{"type":"string"}},
         "serCategories":{"type":"array","items":categoryref_schema}
     },
-    "oneOf":[ {"not": {"anyOf":[
+    "oneOf":[{"not": {"anyOf":[
                             {"required":["serNames",
                                          "serInstancesId",
                                          "serCategories"]
@@ -93,12 +93,13 @@ seravailabilitynotificationsubscription_schema = {
     "type": "object",
     "properties": {
         "callbackReference": {"type": "string"},
-        "filteringCriteria": filteringcriteria_schema,
         "subscriptionType": {"type": "string","enum":["SerAvailabilityNotificationSubscription"]},
+        "filteringCriteria": filteringcriteria_schema,
     },
     "additionalProperties": False,
     "required": ["callbackReference","subscriptionType"],
 }
+
 oauth2info_schema = {
     "type": "object",
     "properties": {
@@ -230,7 +231,7 @@ serviceinfo_schema = {
 
 appreadyconfirmation_schema = {
     "type": "object",
-    "properties": {"indication": {"type": "string"}},
+    "properties": {"indication": {"type": "string","enum":["READY"]}},
     "required": ["indication"],
     "additionalProperties": False
 }
