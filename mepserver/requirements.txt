@@ -35,3 +35,4 @@ zc.lockfile==2.0
 zipp==3.7.0
 pymongo==4.0.2
 requests==2.23.0
+kafka-python==2.0.2

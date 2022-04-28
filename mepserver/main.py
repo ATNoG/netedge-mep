@@ -194,7 +194,7 @@ def main(database: Type[DatabaseBase]):
 
 if __name__ == "__main__":
     mongodb_addr = os.getenv("MONGODB_SERVICE_HOST")
-    mongodb_port = os.getenv("MONGODB_SERVICE_PORT")
+    mongodb_port = int(os.getenv("MONGODB_SERVICE_PORT"))
     mongodb_database =  "mep"
     kafka_ip = socket.gethostbyname("kafka")
     kafka_port = 9092
