@@ -28,6 +28,9 @@ from typing import Type
 import cherrypy
 import argparse
 from mp1.utils import check_port
+from kafka import KafkaProducer
+import socket
+import os
 
 def main(database: Type[DatabaseBase]):
 
@@ -190,15 +193,12 @@ def main(database: Type[DatabaseBase]):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Multi-Access Edge Computing Platform')
-
-    parser.add_argument('--mongodb_addr', help='MongoDB Address', default="127.0.0.1")
-    parser.add_argument('--mongodb_port', type=check_port, help='MongoDB port', default=27017)
-    parser.add_argument('--mongodb_database', help="Database inside MongoDB", default="mep")
-    parser.add_argument('--mongodb_password', help="Password to access MongoDB")
-    parser.add_argument('--mongodb_username', help="Username to acces MongoDB")
-
-    args = parser.parse_args()
-    #TODO should be loaded form config file
-    #TODO same as therest of the dispatcher
-    main(MongoDb(args.mongodb_addr,args.mongodb_port,args.mongodb_database))
+    mongodb_addr = os.getenv("MONGODB_K8S_SERVICE_HOST")
+    mongodb_port = os.getenv("MONGODB_K8S_SERVICE_PORT")
+    mongodb_database =  "mep"
+    kafka_ip = socket.gethostbyname("kafka")
+    kafka_port = 9092
+    producer = KafkaProducer(bootstrap_servers=f"{kafka_ip}:{kafka_port}")
+    producer.send('mep', b'MEC Platform has been successfully launched')
+    producer.flush()
+    main(MongoDb(mongodb_addr,mongodb_port,mongodb_database))

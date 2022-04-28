@@ -123,7 +123,6 @@ class ApplicationServicesController:
             # According to Table 8.2.6.3.4-2
             # TODO ASK ETSI WHATS THE DIFFERENCE BETWEEN _LINK AND THIS LOCATION HEADER BECAUSE BOTH SEEM TO POINT TO SAME THING
             cherrypy.response.headers["Location"] = _links.liveness.href
-
             return serviceInfo
         else:
             # TODO PROBLEM DETAILS OUTPUT
