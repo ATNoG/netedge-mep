@@ -4,6 +4,7 @@ import re
 import sys
 import time
 import socket
+import os
 
 def dump_topic_to_file(kafka_ip,kafka_port,topic):
     consumer = KafkaConsumer(topic,bootstrap_servers=f'{kafka_ip}:{kafka_port}',
@@ -13,7 +14,10 @@ def dump_topic_to_file(kafka_ip,kafka_port,topic):
     with open(f"dump/{topic}","a+") as outfile:
         for msg in consumer:            
             outfile.write(f"Received message {msg.value.decode()} in topic {msg.topic} with key {msg.key} create with timestamp {msg.timestamp}\n")
-            
+            outfile.flush()
+            # typically the above line would do. however this is used to ensure that the file is written
+            os.fsync(outfile.fileno())
+                    
 kafka_ip = socket.gethostbyname("kafka")
 kafka_port = 9092
 admin_client = KafkaAdminClient(bootstrap_servers=[f'{kafka_ip}:{kafka_port}'])
