@@ -1,5 +1,7 @@
 FROM python:3.9
 
+LABEL org.opencontainers.image.source="https://github.com/ATNOG/netedge-mep"
+
 RUN useradd -m -d /home/netedge netedge
 RUN ["apt-get", "update"]
 COPY ./ /home/netedge
