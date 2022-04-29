@@ -112,6 +112,16 @@ class ApplicationSubscriptionsController:
         # According to Table 8.2.8.3.4-2 we need to add the location to header
         # TODO ASK ETSI WHATS THE DIFFERENCE BETWEEN _LINK AND THIS LOCATION HEADER BECAUSE BOTH SEEM TO POINT TO SAME THING
         cherrypy.response.headers["Location"] = subscription
+
+        ## KAFKA
+        import socket
+        from kafka import KafkaProducer
+        kafka_ip = socket.gethostbyname("kafka")
+        kafka_port = 9092
+        producer = KafkaProducer(bootstrap_servers=f"{kafka_ip}:{kafka_port}")
+        producer.send('mep', f'MEC APP with appInstanceId {appInstanceId} has created a service'.encode())
+        producer.flush()
+
         return availability_notification
 
     @json_out(cls=NestedEncoder)

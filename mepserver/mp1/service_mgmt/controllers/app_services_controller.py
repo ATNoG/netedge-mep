@@ -123,6 +123,17 @@ class ApplicationServicesController:
             # According to Table 8.2.6.3.4-2
             # TODO ASK ETSI WHATS THE DIFFERENCE BETWEEN _LINK AND THIS LOCATION HEADER BECAUSE BOTH SEEM TO POINT TO SAME THING
             cherrypy.response.headers["Location"] = _links.liveness.href
+
+            ## KAFKA
+            import socket
+            from kafka import KafkaProducer
+            kafka_ip = socket.gethostbyname("kafka")
+            kafka_port = 9092
+            producer = KafkaProducer(bootstrap_servers=f"{kafka_ip}:{kafka_port}")
+            producer.send('mep', f'MEC APP with appInstanceID {appInstanceId} has created a service'.encode())
+            producer.flush()
+
+
             return serviceInfo
         else:
             # TODO PROBLEM DETAILS OUTPUT

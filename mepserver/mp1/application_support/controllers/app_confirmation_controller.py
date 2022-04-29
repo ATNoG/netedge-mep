@@ -35,6 +35,16 @@ class ApplicationConfirmationController:
             cherrypy.thread_data.db.create("appStatus",appStatusDict)
             # Set header to 204 - No Content
             cherrypy.response.status = 204
+
+            ## KAFKA
+            import socket
+            from kafka import KafkaProducer
+            kafka_ip = socket.gethostbyname("kafka")
+            kafka_port = 9092
+            producer = KafkaProducer(bootstrap_servers=f"{kafka_ip}:{kafka_port}")
+            producer.send('mep', f'MEC APP with appInstanceId {appInstanceId} has sent ready confirmation'.encode())
+            producer.flush()
+
             return None
 
     @cherrypy.tools.json_in()
