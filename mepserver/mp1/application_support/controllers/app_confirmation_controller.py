@@ -36,7 +36,6 @@ class ApplicationConfirmationController:
             # We could use the json_out internal function but it is overkill for this instance
             appStatusDict["indication"] = appStatusDict["indication"].name
             cherrypy.thread_data.db.create("appStatus",appStatusDict)
-            # Set header to 204 - No Content
             return None
 
     @cherrypy.tools.json_in()

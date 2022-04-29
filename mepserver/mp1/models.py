@@ -667,7 +667,7 @@ class ServiceInfo:
         state = ServiceState(data.pop("state"))
         transportInfo = data.pop("transportInfo",None)
         if transportInfo is not None:
-            transportInfo = TransportInfo.from_json()
+            transportInfo = TransportInfo.from_json(transportInfo)
         serializer = SerializerType(data.pop("serializer"))
         scopeOfLocality = None
         if "scopeOfLocality" in data.keys():
