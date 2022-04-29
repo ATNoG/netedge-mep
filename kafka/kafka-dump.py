@@ -12,7 +12,7 @@ def dump_topic_to_file(kafka_ip,kafka_port,topic):
 	                         group_id="timing")
     with open(f"dump/{topic}","a+") as outfile:
         for msg in consumer:            
-            outfile.write(f"Received message {msg.value.decode()} in topic {msg.topic} create with timestamp {msg.timestamp}\n")
+            outfile.write(f"Received message {msg.value.decode()} in topic {msg.topic} with key {msg.key} create with timestamp {msg.timestamp}\n")
             
 kafka_ip = socket.gethostbyname("kafka")
 kafka_port = 9092
