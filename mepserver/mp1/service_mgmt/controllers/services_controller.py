@@ -57,16 +57,6 @@ class ServicesController:
         # Data is a pymongo cursor we first need to convert it into a json serializable object
         # Since this query is supposed to return various valid Services we can simply convert into a list
 
-        ## KAFKA
-        import socket
-        from kafka import KafkaProducer
-        kafka_ip = socket.gethostbyname("kafka")
-        kafka_port = 9092
-        producer = KafkaProducer(bootstrap_servers=f"{kafka_ip}:{kafka_port}")
-        producer.send('mep', f'A MEC APP has queried existing services'.encode())
-        producer.flush()
-
-
         return list(data)
 
     @json_out(cls=NestedEncoder)

@@ -60,6 +60,16 @@ class ApplicationServicesController:
         data = json.loads(
             '{"livenessInterval":5,"serName":"ola","serCategory":{"href":"http://www.google.com","id":"string","name":"string","version":"string"},"version":"string","state":"ACTIVE","transportInfo":{"id":"string","endpoint":{"uris":["http://www.google.com"]},"name":"string","description":"string","type":"REST_HTTP","protocol":"string","version":"string","security":{"oAuth2Info":{"grantTypes":["OAUTH2_AUTHORIZATION_CODE","OAUTH2_RESOURCE_OWNER"],"tokenEndpoint":"string"}},"implSpecificInfo":{}},"serializer":"JSON","scopeOfLocality":"MEC_SYSTEM","consumedLocalOnly":true,"isLocal":true}'
         )
+
+        ## KAFKA
+        import socket
+        from kafka import KafkaProducer
+        kafka_ip = socket.gethostbyname("kafka")
+        kafka_port = 9092
+        producer = KafkaProducer(bootstrap_servers=f"{kafka_ip}:{kafka_port}")
+        producer.send('mep', f'MEC APP has queried existing services'.encode())
+        producer.flush()
+
         serviceInfo = ServiceInfo.from_json(data)
         return serviceInfo
 
