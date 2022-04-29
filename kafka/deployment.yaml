@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-dump
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: kafka-dump
+          image: kafka-dump:latest
+          imagePullPolicy: Always
+          command: ["python3","kafka-dump.py"]
