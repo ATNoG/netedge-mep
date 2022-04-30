@@ -4,6 +4,7 @@ RUN useradd -m -d /home/kafka kafka
 RUN ["apt-get", "update"]
 COPY ./kafka-dump.py /home/kafka
 USER kafka
+RUN mkdir /home/kafka/dump
 ENV PATH="$PATH:/home/kafka/.local/bin"
 RUN ["pip","install","kafka-python"]
 
