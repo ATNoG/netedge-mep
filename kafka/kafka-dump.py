@@ -11,7 +11,7 @@ def dump_topic_to_file(kafka_ip,kafka_port,topic):
 	                         auto_offset_reset="smallest",
 	                         enable_auto_commit=True,
 	                         group_id="timing")
-    with open(f"dump/{topic}","a+") as outfile:
+    with open(f"/home/kafka/dump/{topic}","a+") as outfile:
         for msg in consumer:            
             outfile.write(f"Received message {msg.value.decode()} in topic {msg.topic} with key {msg.key} create with timestamp {msg.timestamp}\n")
             outfile.flush()
