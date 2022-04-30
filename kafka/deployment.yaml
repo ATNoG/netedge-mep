@@ -4,6 +4,9 @@ metadata:
   name: kafka-dump
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-dump
   template:
     spec:
       containers:
