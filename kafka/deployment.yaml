@@ -8,9 +8,12 @@ spec:
     matchLabels:
       app: kafka-dump
   template:
+    metadata:
+      labels:
+        app: kafka-dump
     spec:
       containers:
         - name: kafka-dump
           image: ghcr.io/motamiguel/kafka-dump:latest
           imagePullPolicy: Always
-          command: ["python3","kafka-dump.py"]
+          command: ["python3","/home/kafka/kafka-dump.py"]
