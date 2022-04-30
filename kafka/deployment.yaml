@@ -11,6 +11,6 @@ spec:
     spec:
       containers:
         - name: kafka-dump
-          image: kafka-dump:latest
+          image: ghcr.io/motamiguel/kafka-dump:latest
           imagePullPolicy: Always
           command: ["python3","kafka-dump.py"]
