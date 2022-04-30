@@ -119,7 +119,7 @@ class ApplicationSubscriptionsController:
         kafka_ip = socket.gethostbyname("kafka")
         kafka_port = 9092
         producer = KafkaProducer(bootstrap_servers=f"{kafka_ip}:{kafka_port}")
-        producer.send('mep', f'MEC APP with appInstanceId {appInstanceId} has created a service'.encode())
+        producer.send('mep', f'MEC APP with appInstanceId {appInstanceId} has created a subscriptionnotification for services'.encode())
         producer.flush()
 
         return availability_notification
