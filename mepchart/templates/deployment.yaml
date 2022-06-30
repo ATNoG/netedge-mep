@@ -48,7 +48,7 @@ spec:
         - name: "mongodb"
           image: "busybox:latest"
           command: ["sh"]
-          args: ["-c","until nslookup mongodb.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for MongoDB; sleep 2; done"]
+          args: ["-c","until nslookup mongodb-k8s.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for MongoDB; sleep 2; done"]
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
