@@ -18,5 +18,5 @@ RELEASE=<release>
 # Without replace
 helm install -n $NS --wait --timeout 15m $RELEASE <chart_name> --debug
 # With replace
-helm install -n $NS --wait --timeout 15m $RELEASE --mongodb_addr=<...> --mongodb_port=<...> --mongodb_database=<...> --mongodb_password=<...> --mongodb_username=<...> <chart_name> --debug
+helm install -n $NS --wait --timeout 15m $RELEASE --mongodb_addr=<...> --set mep.args.mongodb_port=<...> mep.args.mongodb_database=<...> mep.args.mongodb_password=<...> mep.args.mongodb_username=<...> <chart_name> --debug
 ```
